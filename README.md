@@ -1,6 +1,10 @@
 # Papai Forte — Projeto 90 dias
 
-App pessoal (PWA) feito a partir de [projeto-90-dias.md](projeto-90-dias.md). Roda no navegador do celular, vai para a tela inicial como um app e funciona offline. Os dados ficam **só no celular** (localStorage), com backup manual em JSON na aba Guia.
+App pessoal (PWA) feito a partir de [projeto-90-dias.md](projeto-90-dias.md). Roda no navegador do celular, vai para a tela inicial como um app e funciona offline.
+
+**Endereço:** https://papaiforte.testado10.com.br/app/
+
+**Login e nuvem:** entrada com Google (Supabase Auth). Os dados ficam no aparelho (localStorage) e são copiados para a tabela `app_state` do Supabase, que tem RLS liberando leitura e gravação só para o e-mail do dono. O Google está em modo Teste, só com o e-mail do dono como usuário de teste, e o cadastro de novas contas está desligado no Supabase. A sincronização junta os dados dia a dia; quando o mesmo dia muda nos dois lados, vale o lado alterado por último. O backup manual em JSON continua na aba Guia.
 
 ## Estrutura
 
