@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Projeto 90 dias</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF1F5; --surface:#FFFFFF; --soft:#E2E9F0; --ink:#15202B; --muted:#5A6978;
+  --line:#D3DCE5; --accent:#E3892A; --accent-soft:#FBE7CF; --on-accent:#1E1205;
+  --good:#2C8559; --good-soft:#D9F0E3; --warn:#BE3F2B; --warn-soft:#F8DDD7;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E151D; --surface:#17212C; --soft:#1E2B38; --ink:#E5ECF2; --muted:#93A2B1;
+    --line:#283646; --accent:#F0A04B; --accent-soft:#3A2A17; --on-accent:#1E1205;
+    --good:#4CBF88; --good-soft:#163427; --warn:#EE7A62; --warn-soft:#3B1F1A;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E151D; --surface:#17212C; --soft:#1E2B38; --ink:#E5ECF2; --muted:#93A2B1;
+  --line:#283646; --accent:#F0A04B; --accent-soft:#3A2A17; --on-accent:#1E1205;
+  --good:#4CBF88; --good-soft:#163427; --warn:#EE7A62; --warn-soft:#3B1F1A;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+main{max-width:560px;margin:0 auto;padding:16px 14px 110px}
+h1,h2,h3,.num{font-family:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;letter-spacing:.01em}
+h1{font-size:2.4rem;line-height:1;margin:0;font-weight:700}
+h2{font-size:1.45rem;margin:0 0 10px;font-weight:600}
+h3{font-size:1.15rem;margin:0;font-weight:600}
+p{margin:0 0 8px}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:10px;align-items:center}
+.between{justify-content:space-between}
+.wrap{flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+button{font:inherit;color:inherit;cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 12px;font-weight:600;font-size:.92rem}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.ghost{background:transparent}
+.btn:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input,textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 10px;width:100%}
+textarea{resize:vertical;min-height:58px}
+input.n{text-align:center;padding:8px 4px}
+label.lb{display:block;font-size:.82rem;color:var(--muted);margin:0 0 4px}
+
+/* date nav */
+.datenav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.datenav .d{text-align:center}
+.datenav .d b{display:block;font-family:"Barlow Condensed",sans-serif;font-size:1.3rem}
+.iconbtn{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:1.2rem;display:grid;place-items:center}
+
+/* bottom nav */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:20}
+nav.tabs .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 10px;text-decoration:none;color:var(--muted);font-size:.75rem;font-weight:600}
+nav.tabs a svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav.tabs a[aria-current="page"]{color:var(--accent)}
+
+/* hero grid */
+.hero{padding:16px 14px 14px}
+.hero .big{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:3.4rem;line-height:.9}
+.hero .of{font-family:"Barlow Condensed",sans-serif;font-size:1.3rem;color:var(--muted)}
+.grid90{display:grid;grid-template-columns:22px repeat(7,1fr);gap:4px;margin-top:14px;font-size:.68rem}
+.grid90 .wk{color:var(--muted);display:flex;align-items:center;font-family:"Barlow Condensed",sans-serif;font-size:.8rem}
+.grid90 .hd{text-align:center;color:var(--muted);font-weight:600}
+.cell{aspect-ratio:1;border-radius:5px;background:var(--soft);position:relative}
+.cell.rest{background:transparent;border:1px dashed var(--line)}
+.cell.done{background:var(--accent)}
+.cell.partial{background:var(--accent-soft)}
+.cell.today{outline:2px solid var(--ink);outline-offset:1px}
+.cell.future{opacity:.55}
+.cell.w::after{content:"";position:absolute;right:3px;bottom:3px;width:5px;height:5px;border-radius:50%;background:var(--good)}
+.cell.none{visibility:hidden}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:.76rem;color:var(--muted)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:4px}
+
+/* progress bars */
+.bar{height:8px;border-radius:5px;background:var(--soft);overflow:hidden}
+.bar>span{display:block;height:100%;background:var(--accent);border-radius:5px;transition:width .25s}
+.bar.g>span{background:var(--good)}
+
+/* chips */
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;margin-bottom:12px}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 13px;font-weight:600;font-size:.9rem}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* meals */
+.meal{border-left:4px solid var(--line)}
+.meal.ok{border-left-color:var(--good)}
+.meal .time{font-family:"Barlow Condensed",sans-serif;font-size:1.25rem;font-weight:600;min-width:52px}
+.plan{background:var(--soft);border-radius:9px;padding:8px 10px;font-size:.88rem;color:var(--muted);margin:8px 0}
+.tri{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+
+/* exercises */
+.ex{position:relative}
+.ex .ord{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.5rem;color:var(--accent);min-width:26px;line-height:1}
+.ex.isdone{opacity:.72}
+.ex .cue{font-size:.85rem;color:var(--muted);margin:4px 0 8px}
+.ex .cue.spine{color:var(--warn)}
+.sets{display:grid;grid-template-columns:34px 1fr 1fr;gap:6px;align-items:center}
+.sets .h{font-size:.75rem;color:var(--muted);text-align:center}
+.sets .s{font-family:"Barlow Condensed",sans-serif;font-weight:600;color:var(--muted);text-align:center}
+.tip{font-size:.85rem;background:var(--accent-soft);border-radius:9px;padding:7px 10px;margin-top:8px}
+.last{font-size:.82rem;color:var(--muted);margin-top:6px}
+.check{border:1px solid var(--line);border-radius:9px;background:transparent;padding:6px 10px;font-size:.85rem;font-weight:600}
+.check[aria-pressed="true"]{background:var(--good);border-color:var(--good);color:#fff}
+.pain{display:grid;grid-template-columns:repeat(11,1fr);gap:4px}
+.pain button{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:7px 0;font-weight:600;font-size:.85rem}
+.pain button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.alert{border-radius:11px;padding:10px 12px;font-size:.92rem;margin-bottom:12px}
+.alert.warn{background:var(--warn-soft);color:var(--warn)}
+.alert.good{background:var(--good-soft);color:var(--good)}
+.alert.info{background:var(--accent-soft)}
+
+/* habits */
+.hab{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.hab:last-child{border-bottom:0}
+.water{display:flex;gap:4px;flex-wrap:wrap}
+.water span{width:18px;height:24px;border-radius:4px 4px 6px 6px;border:1.5px solid var(--line)}
+.water span.f{background:#4A90C8;border-color:#4A90C8}
+
+/* stats */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--soft);border-radius:10px;padding:10px}
+.stat .v{font-family:"Barlow Condensed",sans-serif;font-size:1.6rem;font-weight:600;line-height:1.1}
+.stat .k{font-size:.78rem;color:var(--muted)}
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-size:9px;font-family:"Barlow",sans-serif}
+table.list{width:100%;border-collapse:collapse;font-size:.92rem}
+table.list td,table.list th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left}
+table.list th{font-size:.78rem;color:var(--muted);font-weight:600}
+.scrollx{overflow-x:auto}
+ul.plain{margin:0;padding-left:18px}
+ul.plain li{margin-bottom:5px}
+.sync{font-size:.75rem;color:var(--muted);text-align:center;margin-top:8px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav class="tabs" aria-label="Seções"><div class="in" id="tabs"></div></nav>
+
+<script>
+/* ============ DADOS DO PLANO ============ */
+const START_DEFAULT = "2026-11-30";
+const HEIGHT_CM = 167;
+const KCAL_GOAL = 1900, PROT_GOAL = 150, WATER_GOAL = 12; // copos de 250 ml
+
+const MEALS = [
+  {id:"pre", time:"05:15", name:"Pré-treino", opt:true, kcal:0, prot:0,
+   plan:"Café preto. Se bater tontura: 1 banana ou 1 dose de whey com água."},
+  {id:"cafe", time:"07:30", name:"Café da manhã", kcal:450, prot:30,
+   plan:"3 ovos mexidos, 2 fatias de pão integral, 1 fruta e café. Dia corrido: whey + 40 g de aveia + 1 banana. Tome a creatina (5 g) aqui."},
+  {id:"almoco", time:"11:30", name:"Almoço", kcal:600, prot:45,
+   plan:"150 g de frango, carne magra ou peixe, 4 colheres de arroz (~120 g), 1 concha de feijão, salada à vontade, 1 colher de chá de azeite."},
+  {id:"lanche", time:"16:00", name:"Lanche", kcal:330, prot:35,
+   plan:"Iogurte natural + 1 dose de whey + 1 fruta. Ou sanduíche integral de frango ou atum."},
+  {id:"jantar", time:"20:00", name:"Jantar", kcal:520, prot:40,
+   plan:"150 g de proteína, 150 g de batata, mandioca ou arroz, legumes à vontade."},
+  {id:"extra", time:"—", name:"Fora do plano", opt:true, kcal:0, prot:0,
+   plan:"Beliscos, bebida, doce, fim de semana. Anotar com honestidade é o que permite ajustar a dieta certo."}
+];
+
+const WORKOUTS = {
+  A:{title:"Inferiores + core", ex:[
+    {id:"aq_a", name:"Aquecimento na bike", type:"warm", reps:"5 min leve"},
+    {id:"legpress", name:"Leg press 45°", type:"load", sets:3, reps:"10–12", top:12,
+     cue:"Quadril e lombar colados no banco o tempo todo. Desça só até onde o quadril não enrola.", spine:true},
+    {id:"extensora", name:"Cadeira extensora", type:"load", sets:3, reps:"12", top:12,
+     cue:"Suba controlando, segure 1 s em cima."},
+    {id:"flexora", name:"Mesa flexora", type:"load", sets:3, reps:"12", top:12,
+     cue:"Quadril colado no banco, sem arquear a lombar para ajudar.", spine:true},
+    {id:"pelvica", name:"Elevação pélvica", type:"load", sets:3, reps:"10–12", top:12,
+     cue:"Suba até alinhar o quadril com o tronco. Não force a lombar para cima: o trabalho é do glúteo.", spine:true},
+    {id:"afundo", name:"Afundo com halteres", type:"load", sets:3, reps:"10 por perna", top:10,
+     cue:"Tronco reto, passo médio. Halteres leves no início; troque por agachamento goblet só se não doer."},
+    {id:"panturrilha", name:"Panturrilha sentado", type:"load", sets:3, reps:"15", top:15,
+     cue:"Amplitude toda, pausa embaixo."},
+    {id:"curlup", name:"Curl-up de McGill", type:"core", sets:3, reps:"8 × 10 s", unit:"reps",
+     cue:"Uma perna dobrada, mãos sob a lombar. Levante só cabeça e ombros, sem flexionar a coluna.", spine:true},
+    {id:"pranchalat", name:"Prancha lateral", type:"core", sets:3, reps:"20–30 s cada lado", unit:"seg",
+     cue:"Corpo em linha reta. Comece com joelhos apoiados se precisar."},
+    {id:"perdigueiro", name:"Perdigueiro (bird dog)", type:"core", sets:3, reps:"8 cada lado", unit:"reps",
+     cue:"Braço e perna opostos, segure 5 s. Lombar parada como uma mesa."},
+    {id:"esteira_a", name:"Esteira inclinada", type:"cardio", reps:"15–20 min caminhando"}
+  ]},
+  B:{title:"Superiores", ex:[
+    {id:"aq_b", name:"Aquecimento + manguito", type:"warm", reps:"5 min bike + rotação externa com elástico"},
+    {id:"supino", name:"Supino com halteres", type:"load", sets:3, reps:"10–12", top:12,
+     cue:"Pés firmes no chão, glúteo no banco. Peso por halter.", },
+    {id:"remada", name:"Remada com apoio no peito", type:"load", sets:3, reps:"10–12", top:12,
+     cue:"Peito apoiado tira a carga da lombar. Nunca faça remada curvada livre.", spine:true},
+    {id:"puxada", name:"Puxada frente", type:"load", sets:3, reps:"10–12", top:12,
+     cue:"Puxe até o queixo, sem jogar o tronco para trás."},
+    {id:"desenv", name:"Desenvolvimento sentado com encosto", type:"load", sets:3, reps:"10–12", top:12,
+     cue:"Costas coladas no encosto. Se a lombar arquear, a carga está alta.", spine:true},
+    {id:"lateral", name:"Elevação lateral", type:"load", sets:3, reps:"12–15", top:15,
+     cue:"Cotovelo levemente dobrado, sobe até a linha do ombro."},
+    {id:"triceps", name:"Tríceps na polia", type:"load", sets:3, reps:"12", top:12,
+     cue:"Cotovelos parados ao lado do corpo."},
+    {id:"rosca", name:"Rosca com halteres sentado", type:"load", sets:3, reps:"12", top:12,
+     cue:"Sentado e com encosto, sem balanço."},
+    {id:"esteira_b", name:"Esteira inclinada", type:"cardio", reps:"15–20 min caminhando"}
+  ]},
+  C:{title:"Cardio + core", ex:[
+    {id:"cardio_c", name:"Esteira inclinada ou bike", type:"cardio", reps:"30–40 min em ritmo de conversa"},
+    {id:"curlup", name:"Curl-up de McGill", type:"core", sets:3, reps:"8 × 10 s", unit:"reps",
+     cue:"Uma perna dobrada, mãos sob a lombar. Levante só cabeça e ombros.", spine:true},
+    {id:"pranchalat", name:"Prancha lateral", type:"core", sets:3, reps:"20–30 s cada lado", unit:"seg",
+     cue:"Corpo em linha reta."},
+    {id:"perdigueiro", name:"Perdigueiro (bird dog)", type:"core", sets:3, reps:"8 cada lado", unit:"reps",
+     cue:"Segure 5 s em cima, lombar parada."}
+  ]}
+};
+const SCHEDULE = {1:"A", 2:"B", 3:"C", 4:"A", 5:"B"};
+const WEIGH_DOW = [1,3,5];
+
+/* ============ UTILIDADES ============ */
+const pad = n => String(n).padStart(2,"0");
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y,m-1,d); };
+const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return ymd(d); };
+const diffDays = (a,b) => Math.round((parse(b)-parse(a))/86400000);
+const today = () => ymd(new Date());
+const DOW = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
+const DOWS = ["dom","seg","ter","qua","qui","sex","sáb"];
+const dm = s => { const d = parse(s); return `${pad(d.getDate())}/${pad(d.getMonth()+1)}`; };
+const fmtDate = s => `${DOW[parse(s).getDay()]}, ${dm(s)}`;
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num = v => (v===null||v===undefined||v==="") ? null : (typeof v==="number" ? v : (isNaN(parseFloat(String(v).replace(",","."))) ? null : parseFloat(String(v).replace(",","."))));
+const fmt = (v,d=1) => v==null ? "—" : Number(v).toLocaleString("pt-BR",{minimumFractionDigits:0,maximumFractionDigits:d});
+const half = v => Math.round(v*2)/2;
+
+function setPath(obj, path, val){
+  const ks = path.split("."); let o = obj;
+  for(let i=0;i<ks.length-1;i++){
+    if(o[ks[i]]==null || typeof o[ks[i]]!=="object") o[ks[i]] = /^\d+$/.test(ks[i+1]) ? [] : {};
+    o = o[ks[i]];
+  }
+  o[ks[ks.length-1]] = val;
+}
+const getPath = (obj,path) => path.split(".").reduce((o,k)=> o==null?undefined:o[k], obj);
+
+/* ============ ESTADO + SALVAMENTO ============ */
+const KEYS = ["config","food","train","weight"];
+let S = {config:{start:START_DEFAULT, w0:74, bf0:22}, food:{}, train:{}, weight:{}};
+let db = null, uid = null, syncMsg = "Salvo neste aparelho";
+const ui = {date: today(), wDate: today(), open:{}};
+
+function loadLocal(){
+  for(const k of KEYS){
+    try{ const v = localStorage.getItem("cut90:"+k); if(v) S[k] = Object.assign(S[k], JSON.parse(v)); }catch(e){}
+  }
+}
+const timers = {}, chains = {};
+function save(k){
+  try{ localStorage.setItem("cut90:"+k, JSON.stringify(S[k])); }catch(e){}
+  if(!db || !uid) return;
+  clearTimeout(timers[k]);
+  timers[k] = setTimeout(()=>{
+    const json = JSON.stringify(S[k]);
+    chains[k] = (chains[k]||Promise.resolve()).then(()=>
+      db.doc(`data/users/${uid}/${k}`).set({json, at:Date.now()})
+        .then(()=>{ syncMsg = "Sincronizado na sua conta"; paintSync(); })
+        .catch(()=>{ syncMsg = "Sem conexão: salvo neste aparelho"; paintSync(); })
+    );
+  }, 700);
+}
+function paintSync(){ const el = document.getElementById("sync"); if(el) el.textContent = syncMsg; }
+
+async function initCloud(){
+  if(!window.claude || !window.claude.use) return;
+  try{
+    const [d,u] = await Promise.all([claude.use("db"), claude.use("user")]);
+    if(!d || !u) return;
+    const id = await u.id(); if(!id) return;
+    const snaps = await Promise.race([
+      Promise.all(KEYS.map(k => d.doc(`data/users/${id}/${k}`).get())),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),10000))
+    ]);
+    db = d; uid = id;
+    snaps.forEach((s,i)=>{
+      const k = KEYS[i];
+      if(s.exists){
+        try{ S[k] = Object.assign(S[k], JSON.parse(s.data().json)); localStorage.setItem("cut90:"+k, JSON.stringify(S[k])); }catch(e){}
+      } else if(Object.keys(S[k]).length){ save(k); }
+    });
+    syncMsg = "Sincronizado na sua conta";
+    const a = document.activeElement;
+    if(!a || !["INPUT","TEXTAREA"].includes(a.tagName)) render();
+    else paintSync();
+  }catch(e){ syncMsg = "Salvo neste aparelho"; paintSync(); }
+}
+
+/* ============ LÓGICA DO PROGRAMA ============ */
+const start = () => S.config.start || START_DEFAULT;
+const dayNum = d => diffDays(start(), d) + 1;
+const weekNum = d => Math.floor((dayNum(d)-1)/7) + 1;
+const workoutKeyFor = d => (S.train[d] && S.train[d].k) || SCHEDULE[parse(d).getDay()] || null;
+
+function sessionHasData(sess){
+  if(!sess || !sess.ex) return false;
+  return Object.values(sess.ex).some(e => e && (e.done || (e.sets||[]).some(s=>s && (num(s.kg)!=null || num(s.r)!=null)) || num(e.min)!=null));
+}
+function sessionStatus(d){
+  const sess = S.train[d]; if(!sessionHasData(sess)) return "none";
+  const k = workoutKeyFor(d); if(!k) return "partial";
+  const exs = WORKOUTS[k].ex;
+  const done = exs.filter(x => { const e = sess.ex[x.id]; return e && (e.done || (e.sets||[]).some(s=>s&&num(s.r)!=null) || num(e.min)!=null); }).length;
+  return done >= Math.ceil(exs.length*0.7) ? "done" : "partial";
+}
+function lastSession(exId, before){
+  const ds = Object.keys(S.train).filter(d => d < before).sort().reverse();
+  for(const d of ds){
+    const e = S.train[d].ex && S.train[d].ex[exId];
+    if(e && (e.sets||[]).some(s=>s && num(s.kg)!=null)) return {date:d, sets:e.sets.filter(Boolean)};
+  }
+  return null;
+}
+function history(exId){
+  return Object.keys(S.train).sort().map(d=>{
+    const e = S.train[d].ex && S.train[d].ex[exId];
+    if(!e) return null;
+    const kgs = (e.sets||[]).filter(Boolean).map(s=>num(s.kg)).filter(v=>v!=null);
+    return kgs.length ? {d, y:Math.max(...kgs)} : null;
+  }).filter(Boolean);
+}
+function suggestion(x, d){
+  const n = dayNum(d);
+  if(n <= 14 && n >= 1) return "Semanas 1–2: carga leve, foco em técnica e amplitude sem dor.";
+  const last = lastSession(x.id, d);
+  if(!last) return "Primeira vez: ache a carga em que a última repetição sai difícil, mas limpa.";
+  const top = Math.max(...last.sets.map(s=>num(s.kg)).filter(v=>v!=null));
+  const filled = last.sets.filter(s=>num(s.r)!=null);
+  const allTop = filled.length >= x.sets && filled.every(s=>num(s.r) >= x.top);
+  return allTop
+    ? `Você bateu ${x.top} reps em todas as séries: suba para ~${fmt(half(top*1.05))} kg.`
+    : `Mantenha ${fmt(top)} kg e busque mais repetições até chegar em ${x.top} em todas.`;
+}
+function dayFood(d){ return S.food[d] || {}; }
+function foodTotals(d){
+  const m = dayFood(d).meals || {}; let k=0,p=0,c=0;
+  for(const meal of MEALS){ const e = m[meal.id]; if(!e) continue;
+    if(num(e.kcal)!=null) k+=num(e.kcal); if(num(e.prot)!=null) p+=num(e.prot);
+    if((e.text||"").trim() && meal.id!=="extra" && meal.id!=="pre") c++; }
+  return {k,p,c};
+}
+function isWeighDay(d){ return WEIGH_DOW.includes(parse(d).getDay()); }
+function nextWeighDay(d){ for(let i=0;i<8;i++){ const x = addDays(d,i); if(isWeighDay(x)) return x; } return d; }
+function isMeasureDay(d){ const n = dayNum(d); return n>=1 && n<=90 && ((n-1)%14===0 || n===90); }
+function nextMeasureDay(d){ for(let i=0;i<15;i++){ const x = addDays(d,i); if(isMeasureDay(x)) return x; } return null; }
+function navyBF(waist, neck){
+  if(!waist || !neck || waist<=neck) return null;
+  return 495/(1.0324 - 0.19077*Math.log10(waist-neck) + 0.15456*Math.log10(HEIGHT_CM)) - 450;
+}
+function weeklyAverages(){
+  const by = {};
+  for(const [d,e] of Object.entries(S.weight)){ const kg = num(e && e.kg); if(kg==null) continue;
+    const w = weekNum(d); (by[w] = by[w]||[]).push(kg); }
+  return Object.keys(by).map(Number).sort((a,b)=>a-b).map(w=>({w, avg: by[w].reduce((a,b)=>a+b,0)/by[w].length, n:by[w].length}));
+}
+
+/* ============ GRÁFICO ============ */
+function lineChart(pts, unit){
+  if(pts.length < 2) return `<p class="muted small">O gráfico aparece a partir do segundo registro.</p>`;
+  const W=320,H=130,pl=30,pr=10,pt=12,pb=22;
+  const ys = pts.map(p=>p.y); let mn = Math.min(...ys), mx = Math.max(...ys);
+  if(mx-mn < 1){ mn -= .5; mx += .5; }
+  const X = i => pl + i*(W-pl-pr)/(pts.length-1);
+  const Y = v => pt + (mx-v)*(H-pt-pb)/(mx-mn);
+  const line = pts.map((p,i)=>`${X(i).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ");
+  const step = Math.max(1, Math.ceil(pts.length/6));
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Evolução">
+    <line x1="${pl}" y1="${Y(mx)}" x2="${W-pr}" y2="${Y(mx)}" stroke="var(--line)"/>
+    <line x1="${pl}" y1="${Y(mn)}" x2="${W-pr}" y2="${Y(mn)}" stroke="var(--line)"/>
+    <text x="2" y="${Y(mx)+3}">${fmt(mx)}</text><text x="2" y="${Y(mn)+3}">${fmt(mn)}</text>
+    <polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linejoin="round"/>
+    ${pts.map((p,i)=>`<circle cx="${X(i)}" cy="${Y(p.y)}" r="3" fill="var(--accent)"/>`).join("")}
+    ${pts.map((p,i)=> i%step===0||i===pts.length-1 ? `<text x="${X(i)}" y="${H-6}" text-anchor="middle">${esc(p.label)}</text>`:"").join("")}
+  </svg>`;
+}
+
+/* ============ VIEWS ============ */
+const ICONS = {
+  hoje:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  comida:'<svg viewBox="0 0 24 24"><path d="M4 3v8a3 3 0 0 0 6 0V3M7 3v18M17 3c-2 0-3 3-3 6s1 4 3 4v8"/></svg>',
+  treino:'<svg viewBox="0 0 24 24"><path d="M3 9v6M6 6v12M18 6v12M21 9v6M6 12h12"/></svg>',
+  peso:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 9a5 5 0 0 1 8 0M12 9l1.5-2"/></svg>',
+  guia:'<svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5z"/><path d="M8 7h7M8 11h7"/></svg>'
+};
+const TABS = [["hoje","Hoje"],["comida","Comida"],["treino","Treino"],["peso","Peso"],["guia","Guia"]];
+const view = () => { const h = location.hash.replace("#",""); return TABS.some(t=>t[0]===h) ? h : "hoje"; };
+
+function dateNav(key){
+  const d = ui[key];
+  const n = dayNum(d);
+  const label = n>=1 && n<=90 ? `Dia ${n} de 90` : (n<1 ? `Começa em ${1-n} dia${1-n>1?"s":""}` : "Após os 90 dias");
+  return `<div class="datenav">
+    <button class="iconbtn" data-act="nav" data-k="${key}" data-v="-1" aria-label="Dia anterior">‹</button>
+    <div class="d"><b>${fmtDate(d)}</b><span class="muted small">${label}${d===today()?" · hoje":""}</span></div>
+    <button class="iconbtn" data-act="nav" data-k="${key}" data-v="1" aria-label="Próximo dia">›</button>
+  </div>${d!==today()?`<div style="text-align:center;margin:-6px 0 12px"><button class="btn ghost small" data-act="today" data-k="${key}">Voltar para hoje</button></div>`:""}`;
+}
+
+function vHoje(){
+  const t = today(), n = dayNum(t);
+  const k = SCHEDULE[parse(t).getDay()];
+  const tot = foodTotals(t);
+  const f = dayFood(t), hab = f.hab || {};
+  // grid
+  let cells = "";
+  for(let w=0; w<13; w++){
+    cells += `<div class="wk">S${w+1}</div>`;
+    for(let i=0;i<7;i++){
+      const idx = w*7+i;
+      if(idx>=90){ cells += `<div class="cell none"></div>`; continue; }
+      const d = addDays(start(), idx), dow = parse(d).getDay();
+      const st = sessionStatus(d);
+      let cls = "cell";
+      if(st==="done") cls+=" done"; else if(st==="partial") cls+=" partial"; else if(!SCHEDULE[dow]) cls+=" rest";
+      if(d===t) cls+=" today"; if(d>t) cls+=" future";
+      if(S.weight[d] && num(S.weight[d].kg)!=null) cls+=" w";
+      cells += `<div class="${cls}" title="${fmtDate(d)}"></div>`;
+    }
+  }
+  const startDow = parse(start()).getDay();
+  const heads = Array.from({length:7},(_,i)=>`<div class="hd">${DOWS[(startDow+i)%7].slice(0,1).toUpperCase()}</div>`).join("");
+  const trained = Array.from({length:90},(_,i)=>addDays(start(),i)).filter(d=>sessionStatus(d)==="done").length;
+
+  const headline = n<1 ? `<div class="big">${1-n}</div><div class="of">dia${1-n>1?"s":""} para começar · início ${fmtDate(start())}</div>`
+    : n>90 ? `<div class="big">90</div><div class="of">dias concluídos</div>`
+    : `<div class="big">Dia ${n}</div><div class="of">de 90 · semana ${weekNum(t)} · ${trained} treinos feitos</div>`;
+
+  // next meal
+  const now = new Date(); const hm = pad(now.getHours())+":"+pad(now.getMinutes());
+  const nextMeal = MEALS.filter(m=>m.time!=="—" && m.id!=="pre").find(m=>m.time>hm);
+
+  const weigh = isWeighDay(t);
+  const wDone = S.weight[t] && num(S.weight[t].kg)!=null;
+  const measure = isMeasureDay(t);
+  const lastPain = Object.keys(S.train).sort().reverse().map(d=>S.train[d].pain).find(v=>v!=null);
+
+  return `
+  <section class="card hero">
+    ${headline}
+    <div class="grid90"><div></div>${heads}${cells}</div>
+    <div class="legend"><span><i style="background:var(--accent)"></i>treino feito</span><span><i style="background:var(--accent-soft)"></i>incompleto</span><span><i style="border:1px dashed var(--line)"></i>descanso</span><span><i style="background:var(--good);border-radius:50%;width:7px;height:7px"></i>pesagem</span></div>
+  </section>
+
+  ${lastPain>=4 ? `<div class="alert warn">Último treino com dor lombar ${lastPain}/10. Reduza a carga do que doeu e, se a dor irradiar para a perna, pare e procure seu médico.</div>`:""}
+
+  <section class="card">
+    <div class="row between"><h2 style="margin:0">Treino de hoje</h2>${k?`<span class="muted small">${sessionStatus(t)==="done"?"✓ feito":""}</span>`:""}</div>
+    ${k ? `<p style="margin-top:6px"><b>${k} · ${WORKOUTS[k].title}</b> <span class="muted">· ${WORKOUTS[k].ex.length} itens, 05:30–07:00</span></p>
+      <a class="btn primary" href="#treino" data-act="today" data-k="date" style="display:inline-block;text-decoration:none">Abrir treino de hoje</a>`
+      : `<p style="margin-top:6px">Descanso ativo: caminhada de 30–40 min ou bike leve, mais o Big 3 de McGill.</p>`}
+  </section>
+
+  <section class="card">
+    <h2>Comida</h2>
+    <div class="row between small"><span>${fmt(tot.k,0)} de ${KCAL_GOAL} kcal</span><span class="muted">${tot.c} de 4 refeições anotadas</span></div>
+    <div class="bar" style="margin:5px 0 10px"><span style="width:${Math.min(100,tot.k/KCAL_GOAL*100)}%"></span></div>
+    <div class="row between small"><span>${fmt(tot.p,0)} de ${PROT_GOAL} g de proteína</span></div>
+    <div class="bar g" style="margin:5px 0 10px"><span style="width:${Math.min(100,tot.p/PROT_GOAL*100)}%"></span></div>
+    ${nextMeal ? `<p class="small">Próxima: <b>${nextMeal.name}, ${nextMeal.time}</b></p>` : ""}
+    <a class="btn" href="#comida" data-act="today" data-k="date" style="display:inline-block;text-decoration:none">Anotar refeição</a>
+  </section>
+
+  <section class="card">
+    <h2>Pesagem</h2>
+    ${weigh ? (wDone ? `<p>✓ Pesado hoje: <b>${fmt(num(S.weight[t].kg))} kg</b></p>` : `<p><b>Hoje é dia de pesar.</b> Em jejum, depois do banheiro, antes do treino.</p>`)
+      : `<p>Hoje não. Próxima pesagem: <b>${fmtDate(nextWeighDay(t))}</b>.</p>`}
+    ${measure ? `<p class="small">📏 Hoje também é dia de medir cintura e pescoço.</p>`:""}
+    <a class="btn" href="#peso">Abrir peso</a>
+  </section>
+
+  <section class="card">
+    <h2>Hábitos de hoje</h2>
+    <div class="hab"><span>Creatina 5 g</span><button class="check" data-act="hab" data-h="creat" aria-pressed="${!!hab.creat}">${hab.creat?"Tomei":"Marcar"}</button></div>
+    <div class="hab"><span>8 mil passos ou mais</span><button class="check" data-act="hab" data-h="passos" aria-pressed="${!!hab.passos}">${hab.passos?"Feito":"Marcar"}</button></div>
+    <div class="hab"><span>Dormi 7 h ou mais</span><button class="check" data-act="hab" data-h="sono" aria-pressed="${!!hab.sono}">${hab.sono?"Sim":"Marcar"}</button></div>
+    <div class="hab" style="display:block">
+      <div class="row between"><span>Água: ${fmt((f.water||0)*0.25,2)} de 3 L</span>
+        <span class="row"><button class="iconbtn" style="width:34px;height:34px" data-act="water" data-v="-1" aria-label="Tirar um copo">−</button><button class="iconbtn" style="width:34px;height:34px" data-act="water" data-v="1" aria-label="Adicionar um copo">+</button></span></div>
+      <div class="water" style="margin-top:8px">${Array.from({length:WATER_GOAL},(_,i)=>`<span class="${i<(f.water||0)?"f":""}"></span>`).join("")}</div>
+    </div>
+  </section>`;
+}
+
+function vComida(){
+  const d = ui.date, f = dayFood(d), m = f.meals || {};
+  const tot = foodTotals(d);
+  return `${dateNav("date")}
+  <section class="card">
+    <div class="row between small"><span id="tk">${fmt(tot.k,0)} de ${KCAL_GOAL} kcal</span><span class="muted">meta do déficit</span></div>
+    <div class="bar" style="margin:5px 0 10px"><span id="bk" style="width:${Math.min(100,tot.k/KCAL_GOAL*100)}%"></span></div>
+    <div class="row between small"><span id="tp">${fmt(tot.p,0)} de ${PROT_GOAL} g de proteína</span><span class="muted">~2 g por kg</span></div>
+    <div class="bar g" style="margin-top:5px"><span id="bp" style="width:${Math.min(100,tot.p/PROT_GOAL*100)}%"></span></div>
+    <p class="small muted" style="margin:10px 0 0">Kcal e proteína são opcionais. “Comi o plano” preenche os valores do cardápio.</p>
+  </section>
+  ${MEALS.map(meal=>{
+    const e = m[meal.id] || {};
+    const ok = (e.text||"").trim().length>0;
+    return `<section class="card meal ${ok?"ok":""}" id="meal-${meal.id}">
+      <div class="row between"><div class="row"><span class="time">${meal.time}</span><h3>${meal.name}${meal.opt?` <span class="muted small" style="font-family:Barlow,sans-serif;font-weight:400">opcional</span>`:""}</h3></div>
+      ${meal.kcal?`<span class="muted small">${meal.kcal} kcal · ${meal.prot} g</span>`:""}</div>
+      <div class="plan">${esc(meal.plan)}</div>
+      <label class="lb" for="t-${meal.id}">O que você comeu</label>
+      <textarea id="t-${meal.id}" data-f="food" data-p="${d}.meals.${meal.id}.text" placeholder="Ex.: 2 ovos, 1 pão, café com leite">${esc(e.text)}</textarea>
+      <div class="tri">
+        <div><label class="lb">Kcal (aprox.)</label><input class="n" inputmode="decimal" data-num data-f="food" data-p="${d}.meals.${meal.id}.kcal" value="${esc(e.kcal??"")}"></div>
+        <div><label class="lb">Proteína (g)</label><input class="n" inputmode="decimal" data-num data-f="food" data-p="${d}.meals.${meal.id}.prot" value="${esc(e.prot??"")}"></div>
+      </div>
+      ${meal.kcal ? `<div class="row" style="margin-top:10px"><button class="btn" data-act="plan" data-m="${meal.id}">Comi o plano</button>${ok?`<button class="btn ghost" data-act="clearmeal" data-m="${meal.id}">Limpar</button>`:""}</div>`:""}
+    </section>`;}).join("")}
+  <section class="card">
+    <div class="row between"><h3>Água: ${fmt((f.water||0)*0.25,2)} de 3 L</h3>
+    <span class="row"><button class="iconbtn" style="width:34px;height:34px" data-act="water" data-v="-1" data-d="${d}" aria-label="Tirar um copo">−</button><button class="iconbtn" style="width:34px;height:34px" data-act="water" data-v="1" data-d="${d}" aria-label="Adicionar um copo">+</button></span></div>
+    <div class="water" style="margin-top:8px">${Array.from({length:WATER_GOAL},(_,i)=>`<span class="${i<(f.water||0)?"f":""}"></span>`).join("")}</div>
+  </section>`;
+}
+
+function vTreino(){
+  const d = ui.date, dow = parse(d).getDay();
+  const k = workoutKeyFor(d);
+  const sess = S.train[d] || {};
+  const chips = ["A","B","C"].map(x=>`<button class="chip" data-act="pickw" data-w="${x}" aria-pressed="${k===x}">${x} · ${WORKOUTS[x].title}</button>`).join("");
+  let body = "";
+  if(!k){
+    body = `<section class="card"><h2>Fim de semana: descanso ativo</h2><p>Caminhada de 30–40 min ou bike leve, mais o Big 3 de McGill. Descansar também faz parte: é quando o músculo se recupera.</p><p class="small muted">Perdeu um treino na semana? Escolha acima e faça hoje.</p></section>`;
+  } else {
+    const W = WORKOUTS[k];
+    const n = dayNum(d);
+    body = `${n>=1&&n<=14?`<div class="alert info">Semana ${weekNum(d)} de adaptação: cargas leves, aprenda os movimentos. Nada pode doer na lombar.</div>`:""}
+    <p class="muted small" style="margin:0 0 10px">Faça na ordem. Descanso de 60–90 s entre séries. Pare 1–2 reps antes da falha.</p>
+    ${W.ex.map((x,i)=>{
+      const e = (sess.ex && sess.ex[x.id]) || {};
+      const sets = e.sets || [];
+      const base = `${d}.ex.${x.id}`;
+      let inner = "";
+      if(x.type==="load"){
+        const last = lastSession(x.id, d);
+        inner = `<div class="sets">
+          <div></div><div class="h">Carga (kg)</div><div class="h">Reps</div>
+          ${Array.from({length:x.sets},(_,s)=>`<div class="s">${s+1}ª</div>
+            <input class="n" inputmode="decimal" aria-label="Carga série ${s+1}" data-num data-f="train" data-p="${base}.sets.${s}.kg" value="${esc(sets[s]&&sets[s].kg!=null?sets[s].kg:"")}" placeholder="${last&&last.sets[s]&&last.sets[s].kg!=null?esc(last.sets[s].kg):""}">
+            <input class="n" inputmode="numeric" aria-label="Repetições série ${s+1}" data-num data-f="train" data-p="${base}.sets.${s}.r" value="${esc(sets[s]&&sets[s].r!=null?sets[s].r:"")}" placeholder="${esc(String(x.top))}">`).join("")}
+        </div>
+        ${last?`<div class="last">Última vez (${dm(last.date)}): ${last.sets.map(s=>`${fmt(num(s.kg))} kg × ${s.r??"?"}`).join(" · ")}</div>`:""}
+        <div class="tip">${esc(suggestion(x,d))}</div>
+        <div class="row" style="margin-top:8px"><button class="btn ghost small" data-act="openex" data-x="${x.id}">${ui.open[x.id]?"Esconder evolução":"Ver evolução da carga"}</button></div>
+        ${ui.open[x.id]?`<div style="margin-top:6px">${lineChart(history(x.id).map(h=>({y:h.y,label:dm(h.d)})))}</div>`:""}`;
+      } else if(x.type==="core"){
+        inner = `<div class="sets" style="grid-template-columns:34px 1fr">
+          <div></div><div class="h">${x.unit==="seg"?"Segundos":"Repetições"}</div>
+          ${Array.from({length:x.sets},(_,s)=>`<div class="s">${s+1}ª</div><input class="n" inputmode="numeric" data-num data-f="train" data-p="${base}.sets.${s}.r" value="${esc(sets[s]&&sets[s].r!=null?sets[s].r:"")}">`).join("")}
+        </div>`;
+      } else if(x.type==="cardio"){
+        inner = `<div class="tri" style="grid-template-columns:1fr 1fr 1fr">
+          <div><label class="lb">Minutos</label><input class="n" inputmode="decimal" data-num data-f="train" data-p="${base}.min" value="${esc(e.min??"")}"></div>
+          <div><label class="lb">Inclinação %</label><input class="n" inputmode="decimal" data-num data-f="train" data-p="${base}.incl" value="${esc(e.incl??"")}"></div>
+          <div><label class="lb">Velocidade</label><input class="n" inputmode="decimal" data-num data-f="train" data-p="${base}.vel" value="${esc(e.vel??"")}"></div>
+        </div>`;
+      }
+      return `<section class="card ex ${e.done?"isdone":""}">
+        <div class="row" style="align-items:flex-start">
+          <span class="ord">${i+1}</span>
+          <div class="grow">
+            <div class="row between" style="align-items:flex-start"><h3>${esc(x.name)}</h3>
+              <button class="check" data-act="exdone" data-x="${x.id}" aria-pressed="${!!e.done}">${e.done?"✓ Feito":"Feito"}</button></div>
+            <div class="muted small">${x.sets?`${x.sets} × `:""}${esc(x.reps)}</div>
+            ${x.cue?`<div class="cue ${x.spine?"spine":""}">${x.spine?"Coluna: ":""}${esc(x.cue)}</div>`:""}
+            ${inner}
+          </div>
+        </div>
+      </section>`;
+    }).join("")}
+    <section class="card">
+      <h3>Dor lombar durante o treino</h3>
+      <p class="small muted">0 = nenhuma · 10 = forte. Registre todo treino: é seu termômetro da coluna.</p>
+      <div class="pain">${Array.from({length:11},(_,i)=>`<button data-act="pain" data-v="${i}" aria-pressed="${sess.pain===i}">${i}</button>`).join("")}</div>
+      ${sess.pain>=4?`<div class="alert warn" style="margin:10px 0 0">Dor ${sess.pain}/10: reduza a carga do exercício que doeu na próxima vez. Dor que irradia para a perna, formigamento ou dormência: pare e procure seu médico.</div>`:""}
+      <label class="lb" style="margin-top:12px" for="obs">Observações</label>
+      <textarea id="obs" data-f="train" data-p="${d}.note" placeholder="Ex.: leg press incomodou no fim da série">${esc(sess.note)}</textarea>
+    </section>`;
+  }
+  // overview of loads
+  const loadEx = []; const seen = new Set();
+  for(const key of ["A","B"]) for(const x of WORKOUTS[key].ex) if(x.type==="load" && !seen.has(x.id)){ seen.add(x.id); loadEx.push(x); }
+  const rows = loadEx.map(x=>{ const h = history(x.id); if(!h.length) return "";
+    const f = h[0].y, l = h[h.length-1].y; const p = f ? ((l-f)/f*100) : 0;
+    return `<tr><td>${esc(x.name)}</td><td>${fmt(f)}</td><td><b>${fmt(l)}</b></td><td style="color:${p>0?"var(--good)":"var(--muted)"}">${p>0?"+":""}${fmt(p,0)}%</td></tr>`; }).join("");
+  return `${dateNav("date")}<div class="chips">${chips}</div>${body}
+  <section class="card"><h2>Evolução de cargas</h2>
+    ${rows?`<div class="scrollx"><table class="list"><thead><tr><th>Exercício</th><th>Início</th><th>Atual</th><th>Ganho</th></tr></thead><tbody>${rows}</tbody></table></div>`
+    :`<p class="muted small">Assim que você anotar as cargas, aparece aqui quanto cada exercício subiu desde o início.</p>`}
+  </section>`;
+}
+
+function vPeso(){
+  const t = today(), d = ui.wDate, e = S.weight[d] || {};
+  const w0 = num(S.config.w0)||74, bf0 = num(S.config.bf0)||22;
+  const lean = w0*(1-bf0/100);
+  const t15 = lean/0.85, t12 = lean/0.88;
+  const avgs = weeklyAverages();
+  const cur = avgs.length ? avgs[avgs.length-1].avg : null;
+  const lost = cur!=null ? w0-cur : null;
+  // alerts
+  let alert = "";
+  const curW = weekNum(t);
+  const closed = avgs.filter(a=>a.w < curW);
+  if(closed.length>=3){
+    const [a,b,c] = closed.slice(-3);
+    if(b.avg >= a.avg-0.1 && c.avg >= b.avg-0.1) alert = `<div class="alert warn">Duas semanas sem cair. Tire ~150 kcal por dia (ex.: metade do arroz do jantar) ou some 2 mil passos por dia.</div>`;
+  }
+  if(!alert && closed.length>=2){
+    const [b,c] = closed.slice(-2);
+    if(b.avg - c.avg > 1.0) alert = `<div class="alert warn">Caiu mais de 1 kg na última semana. Rápido demais costuma levar músculo junto: acrescente ~150 kcal por dia.</div>`;
+    else if(b.avg - c.avg >= 0.4) alert = `<div class="alert good">Ritmo bom: −${fmt(b.avg-c.avg)} kg na última semana. Continue igual.</div>`;
+  }
+  // BF
+  const measured = Object.keys(S.weight).sort().filter(k=>num(S.weight[k].waist) && num(S.weight[k].neck));
+  const bfPts = measured.map(k=>({d:k, bf:navyBF(num(S.weight[k].waist), num(S.weight[k].neck)), waist:num(S.weight[k].waist)})).filter(p=>p.bf!=null);
+  const lastBF = bfPts.length ? bfPts[bfPts.length-1] : null;
+  const nm = nextMeasureDay(t);
+  const entries = Object.keys(S.weight).sort().reverse().filter(k=>num(S.weight[k].kg)!=null || num(S.weight[k].waist)!=null);
+
+  return `
+  <section class="card">
+    <h2>Quando se pesar</h2>
+    <p>Segunda, quarta e sexta, <b>em jejum, depois do banheiro, antes do treino</b>, sempre na mesma balança. O que vale é a média da semana, não o número do dia.</p>
+    ${isWeighDay(t) ? `<div class="alert ${S.weight[t]&&num(S.weight[t].kg)!=null?"good":"info"}" style="margin:8px 0 0">${S.weight[t]&&num(S.weight[t].kg)!=null?"✓ Pesagem de hoje registrada.":"Hoje é dia de pesar."}</div>`
+      : `<p class="small muted" style="margin:0">Próxima pesagem: <b>${fmtDate(nextWeighDay(t))}</b></p>`}
+    <p class="small muted" style="margin:6px 0 0">Cintura e pescoço: a cada 14 dias${nm?` · próxima medida ${isMeasureDay(t)?"<b>hoje</b>":fmtDate(nm)}`:""}. Cintura na altura do umbigo, relaxado; pescoço logo abaixo do pomo de adão.</p>
+  </section>
+
+  <section class="card">
+    <h2>Registrar</h2>
+    <label class="lb" for="wd">Data</label>
+    <input id="wd" type="date" value="${d}" data-change="wdate">
+    <div class="tri" style="grid-template-columns:1fr 1fr 1fr">
+      <div><label class="lb" for="wkg">Peso (kg)</label><input id="wkg" class="n" inputmode="decimal" value="${esc(e.kg??"")}" placeholder="74,0"></div>
+      <div><label class="lb" for="wwa">Cintura (cm)</label><input id="wwa" class="n" inputmode="decimal" value="${esc(e.waist??"")}"></div>
+      <div><label class="lb" for="wne">Pescoço (cm)</label><input id="wne" class="n" inputmode="decimal" value="${esc(e.neck??"")}"></div>
+    </div>
+    <button class="btn primary" style="margin-top:10px;width:100%" data-act="saveweight">Salvar pesagem</button>
+  </section>
+
+  ${alert}
+
+  <section class="card">
+    <h2>Onde você está</h2>
+    <div class="stats">
+      <div class="stat"><div class="v">${fmt(w0)} kg</div><div class="k">peso inicial</div></div>
+      <div class="stat"><div class="v">${cur!=null?fmt(cur)+" kg":"—"}</div><div class="k">média da última semana</div></div>
+      <div class="stat"><div class="v" style="color:${lost>0?"var(--good)":"inherit"}">${lost!=null?(lost>0?"−":"+")+fmt(Math.abs(lost))+" kg":"—"}</div><div class="k">desde o início</div></div>
+      <div class="stat"><div class="v">${lastBF?fmt(lastBF.bf)+"%":"—"}</div><div class="k">gordura estimada${lastBF?` (${dm(lastBF.d)})`:""}</div></div>
+      <div class="stat"><div class="v">${fmt(t15)} kg</div><div class="k">meta de 90 dias (~15%)</div></div>
+      <div class="stat"><div class="v">${fmt(t12)} kg</div><div class="k">meta final (~12%)</div></div>
+    </div>
+    <p class="small muted" style="margin:10px 0 0">Metas calculadas mantendo seus ~${fmt(lean)} kg de massa magra. A gordura estimada usa a fórmula da Marinha dos EUA com cintura, pescoço e sua altura (1,67 m): serve para ver a tendência, não como número exato.</p>
+  </section>
+
+  <section class="card">
+    <h2>Média semanal</h2>
+    ${lineChart(avgs.map(a=>({y:a.avg,label:"S"+a.w})))}
+  </section>
+
+  ${bfPts.length?`<section class="card"><h2>Cintura</h2>${lineChart(bfPts.map(p=>({y:p.waist,label:dm(p.d)})))}</section>`:""}
+
+  <section class="card">
+    <h2>Histórico</h2>
+    ${entries.length?`<div class="scrollx"><table class="list"><thead><tr><th>Data</th><th>Peso</th><th>Cintura</th><th>% gord.</th><th></th></tr></thead><tbody>
+    ${entries.map(k=>{const x=S.weight[k]; const bf=navyBF(num(x.waist),num(x.neck));
+      return `<tr><td>${DOWS[parse(k).getDay()]} ${dm(k)}</td><td>${num(x.kg)!=null?fmt(num(x.kg))+" kg":"—"}</td><td>${num(x.waist)!=null?fmt(num(x.waist)):"—"}</td><td>${bf!=null?fmt(bf)+"%":"—"}</td><td><button class="btn ghost small" data-act="delw" data-d="${k}" aria-label="Apagar ${dm(k)}">Apagar</button></td></tr>`;}).join("")}
+    </tbody></table></div>`:`<p class="muted small">Nenhuma pesagem ainda. A primeira é na segunda-feira, dia 1, antes do treino.</p>`}
+  </section>`;
+}
+
+function vGuia(){
+  return `
+  <section class="card">
+    <h2>Sua coluna (L4–L5)</h2>
+    <p><b>Fora do treino nestes 90 dias:</b> levantamento terra, agachamento livre com barra nas costas, stiff, bom-dia, remada curvada, abdominal tradicional, rotação com carga e qualquer exercício que arredonde a lombar com peso.</p>
+    <p><b>Pare na hora</b> se a dor irradiar para a perna ou aparecer formigamento ou dormência. Mostre este treino ao seu ortopedista ou fisioterapeuta.</p>
+    <p class="small muted" style="margin:0">Treino às 5:30 tem um detalhe: os discos estão mais hidratados logo ao acordar e ficam mais sensíveis à flexão. Evite dobrar a coluna nos primeiros 30–45 min do dia, inclusive para amarrar o tênis com carga. O aquecimento existe por isso.</p>
+  </section>
+
+  <section class="card">
+    <h2>Suplementos</h2>
+    <table class="list"><tbody>
+      <tr><td><b>Creatina</b></td><td>5 g por dia, todo dia, no café das 7:30. Mantém força e músculo no déficit.</td></tr>
+      <tr><td><b>Whey</b></td><td>1 dose no lanche das 16:00 (ou no café, nos dias corridos). Serve para bater os 150 g de proteína.</td></tr>
+      <tr><td><b>Café preto</b></td><td>Ao acordar, antes do treino. Já é sua cafeína.</td></tr>
+      <tr><td><b>Vitamina D, ômega 3</b></td><td>Só se exame mostrar falta.</td></tr>
+      <tr><td><b>Não usar</b></td><td>Termogênicos e “queimadores”: pouco efeito real e atrapalham sono e pressão.</td></tr>
+    </tbody></table>
+  </section>
+
+  <section class="card">
+    <h2>Regras que fazem funcionar</h2>
+    <ul class="plain">
+      <li>Durma pelo menos 7 h. Acordando às 5:00, deite por volta das 22:00.</li>
+      <li>Jantar às 20:00 e dormir às 22:00 funciona: mantenha o jantar com proteína e sem fritura.</li>
+      <li>Álcool, refrigerante e fritura ficam de fora nestes 90 dias. É onde a maioria dos planos trava.</li>
+      <li>Fim de semana conta: anote no “Fora do plano”.</li>
+      <li>Ajuste só pela média semanal do peso. O app avisa quando for hora de mudar.</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Ajustes do programa</h2>
+    <label class="lb" for="cs">Início do programa (dia 1)</label>
+    <input id="cs" type="date" value="${esc(start())}" data-change="start">
+    <div class="tri">
+      <div><label class="lb">Peso inicial (kg)</label><input class="n" inputmode="decimal" data-num data-f="config" data-p="w0" value="${esc(S.config.w0??"")}"></div>
+      <div><label class="lb">% de gordura inicial</label><input class="n" inputmode="decimal" data-num data-f="config" data-p="bf0" value="${esc(S.config.bf0??"")}"></div>
+    </div>
+    <p class="small muted" style="margin:8px 0 0">Se fizer bioimpedância, troque o 22% pelo valor medido: as metas de peso se ajustam sozinhas.</p>
+  </section>`;
+}
+
+/* ============ RENDER ============ */
+function render(){
+  const v = view();
+  document.getElementById("tabs").innerHTML = TABS.map(([id,l])=>`<a href="#${id}" ${v===id?'aria-current="page"':""}>${ICONS[id]}<span>${l}</span></a>`).join("");
+  const html = {hoje:vHoje, comida:vComida, treino:vTreino, peso:vPeso, guia:vGuia}[v]();
+  document.getElementById("app").innerHTML = html + `<div class="sync" id="sync">${esc(syncMsg)}</div>`;
+}
+function live(){
+  if(view()!=="comida") return;
+  const tot = foodTotals(ui.date);
+  const s = (id,t)=>{ const el=document.getElementById(id); if(el) el.textContent=t; };
+  s("tk", `${fmt(tot.k,0)} de ${KCAL_GOAL} kcal`); s("tp", `${fmt(tot.p,0)} de ${PROT_GOAL} g de proteína`);
+  const bk=document.getElementById("bk"), bp=document.getElementById("bp");
+  if(bk) bk.style.width = Math.min(100,tot.k/KCAL_GOAL*100)+"%";
+  if(bp) bp.style.width = Math.min(100,tot.p/PROT_GOAL*100)+"%";
+  for(const meal of MEALS){ const c=document.getElementById("meal-"+meal.id); const e=(dayFood(ui.date).meals||{})[meal.id];
+    if(c) c.classList.toggle("ok", !!(e && (e.text||"").trim())); }
+}
+
+/* ============ EVENTOS ============ */
+document.addEventListener("input", ev=>{
+  const t = ev.target; const f = t.dataset && t.dataset.f; if(!f) return;
+  let v = t.value;
+  if(t.dataset.num !== undefined) v = num(v);
+  setPath(S[f], t.dataset.p, v); save(f); live();
+});
+document.addEventListener("change", ev=>{
+  const t = ev.target, c = t.dataset && t.dataset.change; if(!c) return;
+  if(c==="wdate" && t.value){ ui.wDate = t.value; render(); }
+  if(c==="start" && t.value){ S.config.start = t.value; save("config"); }
+});
+document.addEventListener("click", ev=>{
+  const b = ev.target.closest("[data-act]"); if(!b) return;
+  const a = b.dataset.act;
+  if(a==="nav"){ ui[b.dataset.k] = addDays(ui[b.dataset.k], +b.dataset.v); render(); window.scrollTo(0,0); return; }
+  if(a==="today"){ ui[b.dataset.k] = today(); if(b.tagName!=="A"){ render(); } return; }
+  if(a==="hab"){ const d=today(); const h=b.dataset.h; const cur=getPath(S.food,`${d}.hab.${h}`); setPath(S.food,`${d}.hab.${h}`,!cur); save("food"); render(); return; }
+  if(a==="water"){ const d=b.dataset.d||today(); const cur=getPath(S.food,`${d}.water`)||0; setPath(S.food,`${d}.water`,Math.max(0,Math.min(20,cur+ +b.dataset.v))); save("food"); render(); return; }
+  if(a==="plan"){ const meal=MEALS.find(m=>m.id===b.dataset.m); const p=`${ui.date}.meals.${meal.id}`;
+    const cur = getPath(S.food,p+".text");
+    if(!cur || !cur.trim()) setPath(S.food,p+".text","Plano: "+meal.plan);
+    setPath(S.food,p+".kcal",meal.kcal); setPath(S.food,p+".prot",meal.prot); save("food"); render(); return; }
+  if(a==="clearmeal"){ setPath(S.food,`${ui.date}.meals.${b.dataset.m}`,{}); save("food"); render(); return; }
+  if(a==="pickw"){ setPath(S.train,`${ui.date}.k`,b.dataset.w); save("train"); render(); return; }
+  if(a==="exdone"){ const p=`${ui.date}.ex.${b.dataset.x}.done`; setPath(S.train,p,!getPath(S.train,p));
+    if(!getPath(S.train,`${ui.date}.k`)) setPath(S.train,`${ui.date}.k`,workoutKeyFor(ui.date));
+    save("train"); render(); return; }
+  if(a==="pain"){ const v=+b.dataset.v; const cur=getPath(S.train,`${ui.date}.pain`); setPath(S.train,`${ui.date}.pain`, cur===v?null:v);
+    if(!getPath(S.train,`${ui.date}.k`)) setPath(S.train,`${ui.date}.k`,workoutKeyFor(ui.date));
+    save("train"); render(); return; }
+  if(a==="openex"){ ui.open[b.dataset.x] = !ui.open[b.dataset.x]; render(); return; }
+  if(a==="saveweight"){
+    const kg=num(document.getElementById("wkg").value), wa=num(document.getElementById("wwa").value), ne=num(document.getElementById("wne").value);
+    if(kg==null && wa==null && ne==null){ return; }
+    S.weight[ui.wDate] = {kg, waist:wa, neck:ne}; save("weight"); render(); return; }
+  if(a==="delw"){ if(confirm(`Apagar o registro de ${dm(b.dataset.d)}?`)){ delete S.weight[b.dataset.d]; save("weight"); render(); } return; }
+});
+window.addEventListener("hashchange", ()=>{ render(); window.scrollTo(0,0); });
+
+loadLocal();
+render();
+initCloud();
+</script>
+</body>
+</html>
