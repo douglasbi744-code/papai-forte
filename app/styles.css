@@ -217,7 +217,7 @@ label.lb{display:block;font-size:.8rem;color:var(--muted);margin:0 0 4px;font-we
 .run-step b{font-size:1.9rem;background:var(--sunrise);-webkit-background-clip:text;background-clip:text;color:transparent}
 .elapsed{text-align:right;line-height:1}
 .elapsed b{display:block;font-size:1.6rem;font-variant-numeric:tabular-nums}
-.dots{display:flex;gap:5px;margin-top:12px;align-items:center}
+div.dots{display:flex;gap:5px;margin-top:12px;align-items:center}
 .dot-step{flex:1;height:8px;border-radius:4px;border:0;padding:0;background:rgba(255,255,255,.14);transition:all .3s}
 .dot-step.ok{background:#4CBF88}
 .dot-step.cur{background:var(--sunrise);height:12px;box-shadow:0 0 10px rgba(240,160,75,.7)}
@@ -354,3 +354,17 @@ nav.tabs .blob{position:absolute;top:7px;bottom:7px;left:7px;width:calc((100% - 
 .est-ok{margin:6px 0 0;color:var(--good);font-weight:600;font-size:.82rem}
 .est-warn{margin:8px 0 0;font-size:.84rem}
 .nowrap{white-space:nowrap}
+
+/* refeição registrada (fantasma) + edição */
+.meal.done-card{opacity:.72;border-style:dashed;background:transparent;box-shadow:none}
+.meal.done-card .done-text{margin:8px 0 6px;font-size:.92rem;color:var(--ink)}
+.meal.done-card .done-nums{display:flex;gap:14px;font-size:.84rem;color:var(--muted)}
+.meal.done-card .done-nums b{font-family:"Barlow Condensed",sans-serif;font-size:1.15rem;color:var(--ink)}
+.meal.done-card.skipped{opacity:.55}
+.meal.done-card .ex-actions{margin-top:10px}
+.meal.editing{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
+/* horários */
+.mt-grid{display:grid;gap:8px}
+.mt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:12px;background:var(--soft)}
+.mt-row span{font-weight:600}
+.mt-row input{width:auto;min-width:110px;text-align:center;font-family:"Barlow Condensed",sans-serif;font-size:1.15rem}

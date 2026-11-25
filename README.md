@@ -51,7 +51,8 @@ Quem tiver "reduzir movimento" ligado no celular vê tudo sem animação.
   - "Ver lista completa" mostra todos os exercícios para corrigir algum registro.
 - **Comida:** só aparece a refeição da vez, liberada 30 min antes do horário.
   - Ao registrar ("Comi o plano", "Registrar" ou "Não vou fazer"), o card sai da tela e o app fica esperando a próxima refeição, com contagem regressiva.
-  - "Ver todas as refeições do dia" mostra a lista completa.
+  - "Ver todas as refeições do dia" mostra a lista completa. Cada refeição só conta depois de tocar em ✓ Registrar; registrada, ela fica apagadinha (só leitura) com o botão ✏️ Editar.
+  - Os horários das refeições podem ser mudados em Guia → Horários das refeições.
   - **Calorias pelo texto:** ao escrever o que comeu (ex.: "2 pães com ovo, 1 copo de suco"), o app estima kcal e proteína com a tabela de `app/foods.js` (cerca de 200 alimentos, com porções como fatia, colher, concha, copo e lata). Se você digitar os números à mão, eles valem. Se passar do plano da refeição ou da meta do dia, aparece um aviso com o que cortar.
 - **Lembretes de água (notificações):** o workflow `.github/workflows/lembretes-agua.yml` envia um aviso às 7, 9, 11, 13, 15, 17, 19 e 21 h.
   - A notificação só pergunta. A garrafa só é marcada se você tocar em "✅ Bebi 500 ml" ou confirmar no app.

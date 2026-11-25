@@ -153,9 +153,20 @@ function lastPain() {
 const foodDay = (d, make) => { if (!S.food[d] && make) S.food[d] = { meals: {}, bottles: 0, hab: {} }; const f = S.food[d]; if (f) { f.meals = f.meals || {}; f.hab = f.hab || {}; f.bottles = f.bottles || 0; } return f; };
 function foodTotals(d) {
   const f = S.food[d]; let kcal = 0, prot = 0, n = 0;
-  if (f && f.meals) Object.values(f.meals).forEach(m => { if (m.skip) return; kcal += num(m.kcal) || 0; prot += num(m.prot) || 0; if (m.ok) n++; });
+  // só conta o que foi registrado (rascunho ainda não confirmado fica de fora)
+  if (f && f.meals) Object.values(f.meals).forEach(m => { if (m.skip || !m.ok) return; kcal += num(m.kcal) || 0; prot += num(m.prot) || 0; n++; });
   return { kcal, prot, n };
 }
+
+/* horários das refeições: padrão do plano, ou o que você ajustou no Guia */
+const MEAL_DEF = Object.fromEntries(P.meals.map(m => [m.id, m.time]));
+const hm2min = t => /^\d\d:\d\d$/.test(t) ? +t.slice(0, 2) * 60 + +t.slice(3) : 9999;
+function applyMealTimes() {
+  const mt = S.config.mealTimes || {};
+  P.meals.forEach(m => { if (MEAL_DEF[m.id] !== '—') m.time = mt[m.id] || MEAL_DEF[m.id]; });
+  P.meals.sort((a, b) => hm2min(a.time) - hm2min(b.time));
+}
+const mealTime = id => (P.meals.find(m => m.id === id) || {}).time || '';
 function mealFilled(m) { return !!m && !!((m.text && m.text.trim()) || num(m.kcal) != null || num(m.prot) != null); }
 const mealReg = m => !!m && !!(m.ok || m.skip);
 const mins = hm => { const [h, m] = hm.split(':').map(Number); return h * 60 + m; };
@@ -172,7 +183,7 @@ const inLabel = m => { const h = Math.floor(m / 60), r = m % 60; return h ? `${h
 const trainDay = d => { if (!S.train[d]) S.train[d] = { k: kindOf(d), ex: {} }; S.train[d].ex = S.train[d].ex || {}; return S.train[d]; };
 
 /* ---------- UI helpers ---------- */
-const ui = { foodDate: today(), trainDate: today(), weightDate: today(), last: null };
+const ui = { foodDate: today(), trainDate: today(), weightDate: today(), last: null, mealEdit: {} };
 
 function ring(pct, size, stroke, label, sub, cls = '') {
   const r = (size - stroke) / 2, c = 2 * Math.PI * r, off = c * (1 - clamp(pct, 0, 1));
@@ -368,8 +379,8 @@ screens.comida = () => {
   const regs = P.meals.filter(m => mealReg(f && f.meals[m.id]));
   const chips = regs.length ? `<section class="card flat"><span class="eyebrow">Já registradas hoje</span><div class="donechips" style="margin-top:8px">${regs.map(m => {
     const v = f.meals[m.id];
-    return `<button class="donechip ${v.skip ? 'skip' : ''}" data-act="food-all">${v.skip ? '' : '✓ '}${m.name}${v.ts ? ' · ' + new Date(v.ts).toTimeString().slice(0, 5) : ''}</button>`;
-  }).join('')}</div><p class="tiny muted" style="margin:8px 0 0">Toque para ver ou corrigir.</p></section>` : '';
+    return `<button class="donechip ${v.skip ? 'skip' : ''}" data-act="meal-open" data-meal="${m.id}">${v.skip ? '' : '✓ '}${m.name}${v.ts ? ' · ' + new Date(v.ts).toTimeString().slice(0, 5) : ''} <span aria-hidden="true">✏️</span></button>`;
+  }).join('')}</div><p class="tiny muted" style="margin:8px 0 0">Toque numa refeição para ver ou editar.</p></section>` : '';
   const ex = ui.foodExtra && P.meals.find(m => m.id === ui.foodExtra);
   const extras = `<div class="row" style="margin-bottom:12px">${P.meals.filter(m => m.opt).map(m => `<button class="btn sm grow" data-act="meal-extra" data-meal="${m.id}" aria-pressed="${ui.foodExtra === m.id}">${mealReg(f && f.meals[m.id]) ? '✓ ' : '+ '}${m.name}</button>`).join('')}</div>
     ${ex ? mealListCard(ex, f && f.meals[ex.id]) : ''}`;
@@ -399,19 +410,34 @@ function mealNowCard(m, v) {
 
 function mealListCard(m, v, isNext) {
   v = v || {};
-  return `<section class="card meal ${v.ok ? 'filled' : ''} ${isNext && !mealReg(v) ? 'next' : ''}" data-meal-card="${m.id}" data-list>
-    <div class="row between"><div class="row"><span class="time">${m.time}</span><h3>${m.name}</h3></div>
-      ${v.skip ? '<span class="tag">Pulada</span>' : m.opt ? '<span class="tag">Opcional</span>' : `<span class="tag sun">${m.kcal} kcal · ${m.prot} g</span>`}</div>
+  const editing = !!ui.mealEdit[m.id];
+  const head = `<div class="row between"><div class="row"><span class="time">${m.time}</span><h3>${m.name}</h3></div>`;
+  // registrada (ou pulada): fica "fantasma", só leitura, com botão de editar
+  if (mealReg(v) && !editing) {
+    const hora = v.ts ? new Date(v.ts).toTimeString().slice(0, 5) : '';
+    return `<section class="card meal done-card ${v.skip ? 'skipped' : ''}" data-meal-card="${m.id}" data-list>
+      ${head}<span class="tag ${v.skip ? '' : 'good'}">${v.skip ? 'Pulada' : '✓ Registrado'}${hora ? ' ' + hora : ''}</span></div>
+      ${v.skip ? '<p class="small muted" style="margin:8px 0 0">Você marcou que não fez esta refeição.</p>'
+        : `<p class="done-text">${esc(v.text || '—')}</p>
+      <div class="done-nums"><span><b>${fmt(num(v.kcal), 0)}</b> kcal</span><span><b>${fmt(num(v.prot), 0)}</b> g prot.</span></div>`}
+      <div class="ex-actions"><button class="btn sm" data-act="meal-edit" data-meal="${m.id}">✏️ Editar</button>
+        <button class="btn ghost sm" data-act="meal-clear" data-meal="${m.id}">Apagar</button></div></section>`;
+  }
+  return `<section class="card meal ${editing ? 'editing' : ''} ${isNext && !editing ? 'next' : ''}" data-meal-card="${m.id}" data-list>
+    ${head}${editing ? '<span class="tag sun">Editando</span>' : m.opt ? '<span class="tag">Opcional</span>' : `<span class="tag sun">${m.kcal} kcal · ${m.prot} g</span>`}</div>
     <p class="plan">${esc(m.plan)}</p>
     <label class="lb" for="m-${m.id}">O que você comeu</label>
     <textarea id="m-${m.id}" rows="2" data-meal="${m.id}" data-f="text" placeholder="Ex.: ${esc(m.quick || 'descreva aqui')}">${esc(v.text || '')}</textarea>
-    <div class="est" data-est="${m.id}">${v.ok && v.text === m.quick ? '' : estHTML(m, v)}</div>
+    <div class="est" data-est="${m.id}">${v.text === m.quick ? '' : estHTML(m, v)}</div>
     <div class="fields c2" style="margin-top:8px">
-      <div><label class="lb">kcal</label><input class="n" inputmode="decimal" data-meal="${m.id}" data-f="kcal" value="${inVal(v.kcal)}" placeholder="—"></div>
-      <div><label class="lb">Proteína (g)</label><input class="n" inputmode="decimal" data-meal="${m.id}" data-f="prot" value="${inVal(v.prot)}" placeholder="—"></div>
+      <div><label class="lb">kcal (estimado)</label><input class="n" inputmode="decimal" data-meal="${m.id}" data-f="kcal" value="${inVal(v.kcal)}" placeholder="—"></div>
+      <div><label class="lb">Proteína g (estimado)</label><input class="n" inputmode="decimal" data-meal="${m.id}" data-f="prot" value="${inVal(v.prot)}" placeholder="—"></div>
     </div>
-    <div class="ex-actions">${m.quick ? `<button class="btn good sm" data-act="meal-plan" data-meal="${m.id}">✓ Comi o plano</button>` : ''}
-      <button class="btn ghost sm" data-act="meal-clear" data-meal="${m.id}">Limpar</button></div></section>`;
+    <button class="btn primary block" style="margin-top:12px" data-act="meal-reg" data-meal="${m.id}">${editing ? '✓ Salvar alteração' : '✓ Registrar'}</button>
+    <div class="ex-actions">${editing ? `<button class="btn ghost sm" data-act="meal-cancel" data-meal="${m.id}">Cancelar</button>`
+      : `${m.quick ? `<button class="btn good sm" data-act="meal-plan" data-meal="${m.id}">✓ Comi o plano</button>` : ''}
+      ${mealFilled(v) ? `<button class="btn ghost sm" data-act="meal-clear" data-meal="${m.id}">Limpar</button>` : ''}
+      ${m.opt ? '' : `<button class="btn ghost sm" data-act="meal-skip" data-meal="${m.id}">Não fiz</button>`}`}</div></section>`;
 }
 
 /* ---------- estimativa de calorias pelo texto ---------- */
@@ -434,7 +460,7 @@ function cutIdeas(items, need) {
 }
 function mealCheck(m, v, d) {
   const kcal = num(v.kcal) || 0, plan = m.kcal || 0;
-  const day = foodTotals(d || ui.foodDate).kcal, dayOver = Math.round(day - P.goals.kcal);
+  const day = foodTotals(d || ui.foodDate).kcal + (v.ok ? 0 : kcal), dayOver = Math.round(day - P.goals.kcal);
   const mealOver = plan ? Math.round(kcal - plan) : 0;
   const over = Math.max(plan && mealOver > Math.max(60, plan * 0.1) ? mealOver : 0, dayOver > 0 ? dayOver : 0);
   return { kcal, plan, day, dayOver, mealOver, over };
@@ -667,13 +693,13 @@ screens.guia = () => {
       <li>Às 5:30 os discos estão mais hidratados e sensíveis à flexão: evite dobrar a coluna nos primeiros 30–45 min do dia.</li>
       <li>Registre a dor lombar de 0 a 10 em todo treino.</li></ul></div></details>
     <details class="acc"><summary>💊 Suplementos</summary><div><ul class="clean small">
-      <li><b style="min-width:90px">Creatina</b><span>5 g por dia, todo dia, no café das 7:30</span></li>
-      <li><b style="min-width:90px">Whey</b><span>1 dose no lanche das 16:00 (ou no café em dias corridos)</span></li>
+      <li><b style="min-width:90px">Creatina</b><span>5 g por dia, todo dia, no café das ${mealTime('cafe')}</span></li>
+      <li><b style="min-width:90px">Whey</b><span>1 dose no lanche das ${mealTime('lanche')} (ou no café em dias corridos)</span></li>
       <li><b style="min-width:90px">Café preto</b><span>Ao acordar, antes do treino</span></li>
       <li><b style="min-width:90px">Vit. D, ômega 3</b><span>Só se exame mostrar deficiência</span></li>
       <li><b style="min-width:90px">❌ Termogênicos</b><span>Não usar: pouco efeito, atrapalham sono e pressão</span></li></ul></div></details>
     <details class="acc"><summary>⏰ Rotina diária</summary><div><ul class="clean small">
-      ${[['05:00', 'Acordar, café preto'], ['05:30', 'Treino (até 07:00)'], ['07:30', 'Café da manhã + creatina'], ['11:30', 'Almoço'], ['16:00', 'Lanche'], ['20:00', 'Jantar'], ['22:00', 'Dormir (mínimo 7 h)']].map(([h, t]) => `<li><b class="cond" style="min-width:50px;color:var(--accent)">${h}</b><span>${t}</span></li>`).join('')}</ul></div></details>
+      ${[['05:00', 'Acordar, café preto'], ['05:30', 'Treino (até 07:00)'], [mealTime('cafe'), 'Café da manhã + creatina'], [mealTime('almoco'), 'Almoço'], [mealTime('lanche'), 'Lanche'], [mealTime('jantar'), 'Jantar'], ['22:00', 'Dormir (mínimo 7 h)']].sort((x, y) => hm2min(x[0]) - hm2min(y[0])).map(([h, t]) => `<li><b class="cond" style="min-width:50px;color:var(--accent)">${h}</b><span>${t}</span></li>`).join('')}</ul></div></details>
     <details class="acc"><summary>🍽️ Regras da alimentação</summary><div><ul class="dots small">
       <li>Sem álcool, refrigerante e fritura nos 90 dias.</li><li>Fim de semana conta e vai no “Fora do plano”.</li><li>Anotar com honestidade é o que permite ajustar.</li></ul></div></details>
   </section>
@@ -684,6 +710,11 @@ screens.guia = () => {
     <p class="small muted" id="cfg-goals" style="margin:0">${goalsLine()}</p>
     <div><label class="lb" for="c-theme">Aparência</label><select id="c-theme" data-theme-sel><option value="auto" ${theme === 'auto' ? 'selected' : ''}>Automática (do celular)</option><option value="light" ${theme === 'light' ? 'selected' : ''}>Clara</option><option value="dark" ${theme === 'dark' ? 'selected' : ''}>Escura</option></select></div>
   </div></section>
+  <section class="card" id="meal-times"><h3>🍽️ Horários das refeições</h3>
+    <p class="small muted" style="margin:4px 0 10px">Mude para a sua rotina. A refeição aparece na aba Comida 30 min antes do horário.</p>
+    <div class="mt-grid">${P.meals.filter(m => MEAL_DEF[m.id] !== '—').map(m => `<label class="mt-row"><span>${m.name}${m.opt ? ' <i class="muted">(opcional)</i>' : ''}</span>
+      <input type="time" data-mealtime="${m.id}" value="${m.time}" step="300"></label>`).join('')}</div>
+    ${S.config.mealTimes && Object.keys(S.config.mealTimes).length ? '<button class="linkbtn" style="margin-top:10px" data-act="meal-times-reset">Voltar aos horários do plano</button>' : ''}</section>
   ${pushCard()}
   <section class="card"><h3>Backup</h3><p class="small muted" style="margin:4px 0 10px">Os dados ficam só neste celular. Exporte de vez em quando para não perder nada.</p>
     <div class="row wrap"><button class="btn" data-act="export">⬇️ Exportar dados</button><label class="btn" style="cursor:pointer">⬆️ Importar<input type="file" accept="application/json,.json" data-import hidden></label></div></section>
@@ -850,24 +881,53 @@ $app.addEventListener('click', e => {
   }
   if (a === 'food-all') { ui.foodAll = !ui.foodAll; render(true); window.scrollTo(0, 0); return; }
   if (a === 'meal-extra') { ui.foodExtra = ui.foodExtra === b.dataset.meal ? null : b.dataset.meal; render(true); return; }
+  if (a === 'meal-times-reset') {
+    if (!confirm('Voltar aos horários do plano?')) return;
+    delete S.config.mealTimes; applyMealTimes(); saveNow(); render(true); toast('Horários do plano restaurados'); return;
+  }
+  if (a === 'meal-open') {
+    ui.foodAll = true; ui.mealEdit = {}; render(true);
+    const c = $app.querySelector(`[data-meal-card="${b.dataset.meal}"]`); if (c) c.scrollIntoView({ block: 'center' });
+    return;
+  }
+  if (a === 'meal-edit') {
+    const f = foodDay(ui.foodDate, true), id = b.dataset.meal;
+    ui.mealEdit[id] = { backup: f.meals[id] ? JSON.parse(JSON.stringify(f.meals[id])) : null };
+    if (f.meals[id] && f.meals[id].skip) delete f.meals[id];
+    render(true);
+    const ta = $app.querySelector(`[data-meal-card="${id}"] textarea`); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); }
+    return;
+  }
+  if (a === 'meal-cancel') {
+    const f = foodDay(ui.foodDate, true), id = b.dataset.meal, e = ui.mealEdit[id];
+    if (e) { if (e.backup) f.meals[id] = e.backup; else delete f.meals[id]; }
+    delete ui.mealEdit[id]; saveNow(); render(true); toast('Alteração cancelada'); return;
+  }
   if (['meal-plan', 'meal-clear', 'meal-reg', 'meal-skip'].includes(a)) {
     const d = ui.foodDate, f = foodDay(d, true), m = P.meals.find(x => x.id === b.dataset.meal);
     const protBefore = foodTotals(d).prot;
     const cur = f.meals[m.id] || {};
+    const wasEdit = !!ui.mealEdit[m.id];
+    if (a === 'meal-clear' && mealReg(cur) && !confirm(`Apagar o registro de ${m.name}?`)) return;
     if (a === 'meal-plan') f.meals[m.id] = { text: m.quick || m.plan, kcal: m.kcal, prot: m.prot, ok: true, ts: Date.now() };
     else if (a === 'meal-reg') {
       if (!mealFilled(cur)) { toast('Escreva o que comeu ou toque em “Comi o plano”'); return; }
-      Object.assign(cur, { ok: true, ts: Date.now() }); delete cur.skip; f.meals[m.id] = cur;
+      Object.assign(cur, { ok: true, ts: cur.ok && cur.ts ? cur.ts : Date.now() }); delete cur.skip; f.meals[m.id] = cur;
     } else if (a === 'meal-skip') f.meals[m.id] = { skip: true, ts: Date.now() };
     else delete f.meals[m.id];
+    delete ui.mealEdit[m.id];
     saveNow(); vib(a === 'meal-clear' ? 8 : 20);
     const protAfter = foodTotals(d).prot;
     const card = b.closest('.meal-now');
     const done = () => {
       render(true);
+      const over = a === 'meal-reg' ? mealCheck(m, cur, d).over : 0;
       if (protBefore < P.goals.prot && protAfter >= P.goals.prot) celebrate('Meta de proteína batida! 🥩');
-      else if (card && a === 'meal-reg' && mealCheck(m, cur, d).over > 0) toast(`${m.name} registrado · passou ${fmt(mealCheck(m, cur, d).over, 0)} kcal, compense nas próximas ⚠️`);
-      else if (card) { const n = mealFocus(d); toast(a === 'meal-skip' ? 'Ok, refeição pulada' : `${m.name} registrado ✅${n.cur ? '' : n.next ? ' · próximo: ' + n.next.name + ' ' + n.next.time : ''}`); }
+      else if (over > 0) toast(`${m.name} ${wasEdit ? 'atualizado' : 'registrado'} · passou ${fmt(over, 0)} kcal, compense nas próximas ⚠️`);
+      else if (a === 'meal-clear') toast('Registro apagado');
+      else if (a === 'meal-skip') toast('Ok, refeição pulada');
+      else if (wasEdit) toast(`${m.name} atualizado ✅`);
+      else { const n = card ? mealFocus(d) : {}; toast(`${m.name} registrado ✅${n.cur ? '' : n.next ? ' · próximo: ' + n.next.name + ' ' + n.next.time : ''}`); }
     };
     if (card) { card.classList.add('leaving'); setTimeout(done, 420); } else done();
     return;
@@ -924,11 +984,9 @@ $app.addEventListener('input', e => {
         if (card) card.querySelectorAll('input[data-f]').forEach(i => { i.value = inVal(m[i.dataset.f]); });
       }
     } else { m[el.dataset.f] = num(el.value); if (el.value.trim() !== '') m.manual = true; else delete m.manual; }
-    // na lista completa, escrever já conta como registrado; na refeição da vez só com "Registrar"
-    if (el.closest('[data-list]')) { delete m.skip; if (mealFilled(m)) { m.ok = true; m.ts = m.ts || Date.now(); } else delete m.ok; }
-    if (!mealFilled(m) && !m.skip) delete f.meals[id];
+    // escrever só guarda o rascunho; vale quando você toca em "Registrar" / "Salvar alteração"
+    if (!mealFilled(m) && !m.skip && !ui.mealEdit[id]) delete f.meals[id];
     save();
-    const card = $app.querySelector(`[data-meal-card="${id}"][data-list]`); if (card) card.classList.toggle('filled', !!(f.meals[id] && f.meals[id].ok));
     const tot = document.getElementById('food-totals'); if (tot) tot.innerHTML = foodTotalsHTML(foodTotals(d));
     clearTimeout(estT); estT = setTimeout(() => {
       const box = $app.querySelector(`[data-est="${id}"]`), meal = P.meals.find(x => x.id === id);
@@ -962,6 +1020,12 @@ $app.addEventListener('change', e => {
   const el = e.target;
   if (el.id === 'w-date') { ui.weightDate = el.value || today(); render(true); return; }
   if (el.dataset.cfg === 'start' && el.value) { S.config.start = el.value; saveNow(); toast('Data de início atualizada'); return; }
+  if (el.dataset.mealtime) {
+    if (!/^\d\d:\d\d$/.test(el.value)) return;
+    S.config.mealTimes = { ...(S.config.mealTimes || {}), [el.dataset.mealtime]: el.value };
+    applyMealTimes(); saveNow();
+    const m = P.meals.find(x => x.id === el.dataset.mealtime); toast(`${m.name} agora às ${el.value} ✅`); return;
+  }
   if (el.hasAttribute('data-theme-sel')) { setTheme(el.value); return; }
   if (el.hasAttribute('data-import') && el.files && el.files[0]) {
     const r = new FileReader();
@@ -971,7 +1035,7 @@ $app.addEventListener('change', e => {
         if (!j || typeof j !== 'object' || !('train' in j || 'food' in j || 'weight' in j)) throw new Error('formato');
         if (!confirm('Importar este backup? Os dados atuais deste celular serão substituídos.')) return;
         S = { config: { ...P.defaults, ...(j.config || {}) }, food: j.food || {}, train: j.train || {}, weight: j.weight || {} };
-        saveNow(); toast('Backup importado ✅'); render(true);
+        applyMealTimes(); saveNow(); toast('Backup importado ✅'); render(true);
       } catch (err) { toast('Arquivo inválido'); }
     };
     r.readAsText(el.files[0]); el.value = '';
@@ -1081,6 +1145,7 @@ document.addEventListener('visibilitychange', () => {
   if (today() !== lastDay) { lastDay = today(); ui.foodDate = ui.trainDate = ui.weightDate = lastDay; render(false); }
   applyInbox();
 });
+applyMealTimes();
 render(false);
 applyInbox();
 // veio pelo toque na notificação de água: pergunta se bebeu (só marca se confirmar)
