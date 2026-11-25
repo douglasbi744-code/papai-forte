@@ -1,6 +1,6 @@
 // Service worker: app offline + notificações de água.
 // Ao mudar qualquer arquivo do app, aumente a versão abaixo.
-const VERSION = 'pf-v2';
+const VERSION = 'pf-v3';
 const INBOX = 'pf-inbox';
 const SHELL = [
   './', './index.html', './styles.css', './data.js', './app.js', './manifest.webmanifest',

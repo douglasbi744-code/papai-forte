@@ -253,23 +253,7 @@ const screens = {};
 screens.hoje = () => {
   const t = today(), n = dayN(t), started = n >= 1, done = workoutsDone();
   const pct = clamp(n / 90, 0, 1);
-  // calendário
-  const st = S.config.start, gs = addDays(st, -((dow(st) + 6) % 7));
-  let grid = '<span></span>' + ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map(x => `<span class="hd">${x}</span>`).join('');
-  let idx = 0;
-  for (let w = 0; w < 13; w++) {
-    grid += `<span class="wk">${w + 1}</span>`;
-    for (let i = 0; i < 7; i++) {
-      const d = addDays(gs, w * 7 + i); idx++;
-      if (!inProgram(d)) { grid += '<span class="cell none"></span>'; continue; }
-      const s = status(d), cls = ['cell'];
-      if (s) cls.push(s); else if (!kindOf(d)) cls.push('rest');
-      if (d > t) cls.push('future');
-      if (d === t) cls.push('today');
-      if (S.weight[d] && num(S.weight[d].kg) != null) cls.push('w');
-      grid += `<button class="${cls.join(' ')}" style="animation-delay:${idx * 6}ms" data-act="cell" data-d="${d}" aria-label="Dia ${dayN(d)}, ${shortDate(d)}${s === 'done' ? ', treino feito' : s === 'partial' ? ', incompleto' : ''}"></button>`;
-    }
-  }
+  const st = S.config.start;
   const hero = `<section class="card hero">
     <div class="hero-top"><div>
       <div class="eyebrow">${greeting()}, papai</div>
@@ -278,8 +262,6 @@ screens.hoje = () => {
         `<div class="bignum">90<span class="of">concluído 🏆</span></div>`}
       <div class="pillrow">${started && n <= 90 ? `<span class="pill">Semana ${weekOf(t)} de 13</span>` : `<span class="pill">Início ${ddmm(st)}</span>`}<span class="pill sun">${done} treino${done === 1 ? '' : 's'} feito${done === 1 ? '' : 's'}</span></div>
     </div>${ring(pct, 92, 9, Math.round(pct * 100) + '%', 'jornada')}</div>
-    <div class="grid90">${grid}</div>
-    <div class="legend"><span><i style="background:var(--sunrise)"></i>Feito</span><span><i style="background:rgba(240,160,75,.35)"></i>Incompleto</span><span><i style="border:1.5px dashed rgba(255,255,255,.3)"></i>Descanso</span><span><i style="background:#4CBF88;border-radius:50%"></i>Pesagem</span></div>
   </section>`;
 
   // alerta de dor
@@ -319,6 +301,43 @@ screens.hoje = () => {
     ${waterBlock(t, true)}</section>`;
 
   return `<div class="view stagger">${appbar()}${hero}${pain}${train}${food}${weigh}${habits}</div>`;
+};
+
+/* ---------- calendário ---------- */
+screens.cal = () => {
+  const t = today();
+  const st = S.config.start, gs = addDays(st, -((dow(st) + 6) % 7));
+  let grid = '<span></span>' + ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'].map(x => `<span class="hd">${x}</span>`).join('');
+  let idx = 0;
+  for (let w = 0; w < 13; w++) {
+    grid += `<span class="wk">${w + 1}</span>`;
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(gs, w * 7 + i); idx++;
+      if (!inProgram(d)) { grid += '<span class="cell none"></span>'; continue; }
+      const s = status(d), cls = ['cell'];
+      if (s) cls.push(s); else if (!kindOf(d)) cls.push('rest');
+      if (d > t) cls.push('future');
+      if (d === t) cls.push('today');
+      if (S.weight[d] && num(S.weight[d].kg) != null) cls.push('w');
+      grid += `<button class="${cls.join(' ')}" style="animation-delay:${idx * 6}ms" data-act="cell" data-d="${d}" aria-label="Dia ${dayN(d)}, ${shortDate(d)}${s === 'done' ? ', treino feito' : s === 'partial' ? ', incompleto' : ''}"><span>${+d.slice(8)}</span></button>`;
+    }
+  }
+  const days = Object.keys(S.train).filter(d => inProgram(d));
+  const done = days.filter(d => status(d) === 'done').length, part = days.filter(d => status(d) === 'partial').length;
+  let planned = 0, missed = 0;
+  for (let i = 0; i < 90; i++) { const d = addDays(st, i); if (d >= t) break; if (!kindOf(d)) continue; planned++; if (!status(d)) missed++; }
+  const weighs = Object.keys(S.weight).filter(d => num(S.weight[d].kg) != null).length;
+  const n = dayN(t);
+  const stat = (v, l, c = '') => `<div class="calstat ${c}"><b>${v}</b><span>${l}</span></div>`;
+  return `<div class="view stagger">${appbar('Calendário')}
+    <section class="card hero"><span class="eyebrow">Os 90 dias</span>
+      <h2 style="margin:4px 0 0">${n < 1 ? `Começa em ${ddmm(st)}` : n > 90 ? 'Projeto concluído 🏆' : `Dia ${n} · semana ${weekOf(t)} de 13`}</h2>
+      <div class="grid90 big">${grid}</div>
+      <div class="legend"><span><i style="background:var(--sunrise)"></i>Feito</span><span><i style="background:rgba(240,160,75,.35)"></i>Incompleto</span><span><i style="border:1.5px dashed rgba(255,255,255,.3)"></i>Descanso</span><span><i style="background:#4CBF88;border-radius:50%"></i>Pesagem</span></div>
+      <p class="tiny" style="margin:10px 0 0;color:var(--night-muted)">Toque num dia para ver ou registrar o treino.</p></section>
+    <section class="card"><div class="card-h"><span class="eyebrow">Resumo</span></div>
+      <div class="calstats">${stat(done, 'treinos feitos', 'sun')}${stat(part, 'incompletos')}${stat(missed, `perdidos de ${planned}`)}${stat(weighs, 'pesagens', 'good')}</div></section>
+  </div>`;
 };
 
 screens.comida = () => {
@@ -631,7 +650,7 @@ function pushCard() {
 const goalsLine = () => `Massa magra ~${fmt(lean())} kg · meta 90 dias (15%) <b>${fmt(target(15))} kg</b> · meta final (12%) <b>${fmt(target(12))} kg</b>`;
 
 /* ---------- roteamento ---------- */
-const TABS = ['hoje', 'comida', 'treino', 'peso', 'guia'];
+const TABS = ['hoje', 'comida', 'treino', 'peso', 'cal', 'guia'];
 function route() { const h = location.hash.replace('#', ''); return TABS.includes(h) ? h : 'hoje'; }
 function render(keepScroll) {
   const r = route(), y = window.scrollY;

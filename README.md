@@ -33,7 +33,7 @@ app/
 
 **Movimento:**
 - Os anéis de progresso enchem ao abrir a tela.
-- Os dias do calendário de 90 dias aparecem em cascata.
+- Os dias do calendário (aba Dias) aparecem em cascata.
 - A aba ativa desliza entre as abas.
 - O brilho do sol no card principal "respira".
 - Confete e vibração ao concluir um treino, bater a meta de proteína, completar a água ou os hábitos do dia, e ao salvar a pesagem.
@@ -42,6 +42,7 @@ Quem tiver "reduzir movimento" ligado no celular vê tudo sem animação.
 
 ## Como o app funciona no dia a dia
 
+- **Hoje** mostra só o dia: treino, refeição da vez, pesagem, hábitos e água. O calendário dos 90 dias fica na aba **Dias**, com o número de cada dia e um resumo (feitos, incompletos, perdidos, pesagens).
 - **Água:** a referência é uma garrafa de 500 ml, então a meta de 3 L são 6 garrafas. Toque na garrafa quando terminar de beber.
 - **Treino guiado:** toque em ▶ Iniciar treino e o app mostra um exercício por vez, com o tempo de treino correndo.
   - "Concluir · próximo exercício" passa para o seguinte.
