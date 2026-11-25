@@ -9,6 +9,9 @@ window.PLAN = {
   // chave pública das notificações (a privada fica só no GitHub, como segredo)
   vapidPublic: 'BFSlNw5ENpbrFr_d7_BjmrSjIPUJUxaKbMNlb1IHjo4yw8yB4ewkfTD-upH8amLgZ6KbC5zXPr3bSV8S27fAQUM',
   repo: 'douglasbi744-code/papai-forte',
+  // login e sincronização (Supabase). A chave abaixo é a pública ("publishable"): pode ficar no app; a segurança vem das regras do banco.
+  supabaseUrl: 'https://blngkzjhdmlpwtbvtuxd.supabase.co',
+  supabaseKey: 'sb_publishable__gP0XDyaaFae-Z3mhxYHag_GOzErp04',
 
   meals: [
     { id: 'pre', time: '05:15', name: 'Pré-treino', opt: true, kcal: 0, prot: 0,

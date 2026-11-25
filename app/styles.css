@@ -368,3 +368,14 @@ nav.tabs .blob{position:absolute;top:7px;bottom:7px;left:7px;width:calc((100% - 
 .mt-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:12px;background:var(--soft)}
 .mt-row span{font-weight:600}
 .mt-row input{width:auto;min-width:110px;text-align:center;font-family:"Barlow Condensed",sans-serif;font-size:1.15rem}
+
+/* tela de entrada (login) */
+body.locked nav.tabs, body.locked #timer{display:none}
+.splash{min-height:70vh;display:grid;place-items:center}
+.splash img{width:72px;height:72px;border-radius:18px;animation:breathe 1.6s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.06);opacity:.8}}
+.login{min-height:calc(100vh - 40px);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:24px 8px;max-width:380px;margin:0 auto}
+.login-logo{width:112px;height:112px;border-radius:28px;box-shadow:0 18px 40px -16px rgba(227,137,42,.6)}
+.wordmark.big{font-size:2rem;line-height:1}
+.wordmark.big small{display:block;font-size:.8rem;margin-top:6px}
+.login .btn.go{display:flex;align-items:center;justify-content:center;gap:10px;font-size:1.05rem;padding:14px}

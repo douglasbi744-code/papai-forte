@@ -1,6 +1,6 @@
 // Service worker: app offline + notificações de água.
 // Ao mudar qualquer arquivo do app, aumente a versão abaixo e o ?v= em index.html.
-const VERSION = 'pf-v8';
+const VERSION = 'pf-v9';
 const INBOX = 'pf-inbox';
 const SHELL = [
   './', './index.html', './styles.css', './data.js', './foods.js', './app.js', './manifest.webmanifest',
@@ -23,8 +23,8 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // Fontes do Google: usa o cache e atualiza em segundo plano
-  if (url.host.includes('fonts.googleapis.com') || url.host.includes('fonts.gstatic.com')) {
+  // Fontes do Google e biblioteca do login: usa o cache e atualiza em segundo plano
+  if (url.host.includes('fonts.googleapis.com') || url.host.includes('fonts.gstatic.com') || url.host === 'cdn.jsdelivr.net') {
     e.respondWith(caches.open(VERSION).then(async c => {
       const hit = await c.match(req);
       const net = fetch(req).then(r => { c.put(req, r.clone()); return r; }).catch(() => hit);

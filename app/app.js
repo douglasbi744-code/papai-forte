@@ -6,15 +6,15 @@ const KEY = 'papaiforte.v1';
 const $app = document.getElementById('app');
 
 /* ---------- estado ---------- */
-const blank = () => ({ config: { ...P.defaults }, food: {}, train: {}, weight: {} });
+const blank = () => ({ config: { ...P.defaults }, food: {}, train: {}, weight: {}, meta: { updatedAt: 0 } });
+// aceita qualquer formato salvo (aparelho, backup ou nuvem) e devolve o estado completo
+function normalize(s) {
+  const b = blank();
+  if (!s || typeof s !== 'object') return b;
+  return migrate({ config: { ...b.config, ...(s.config || {}) }, food: s.food || {}, train: s.train || {}, weight: s.weight || {}, meta: { updatedAt: (s.meta && s.meta.updatedAt) || 0 } });
+}
 function load() {
-  try {
-    const s = JSON.parse(localStorage.getItem(KEY));
-    if (s && typeof s === 'object') {
-      const b = blank();
-      return migrate({ config: { ...b.config, ...(s.config || {}) }, food: s.food || {}, train: s.train || {}, weight: s.weight || {} });
-    }
-  } catch (e) {}
+  try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && typeof s === 'object') return normalize(s); } catch (e) {}
   return blank();
 }
 // v1 contava copos de 250 ml em "water"; agora são garrafas de 500 ml em "bottles"
@@ -29,10 +29,131 @@ function migrate(s) {
 }
 let S = load();
 let saveT;
-function save() { clearTimeout(saveT); saveT = setTimeout(saveNow, 120); }
-function saveNow() { clearTimeout(saveT); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
-window.addEventListener('pagehide', saveNow);
-document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
+let dirty = false;
+// save/saveNow: mudança feita por você (marca a hora e manda para a nuvem); storeLocal: só grava no aparelho
+function save() { dirty = true; clearTimeout(saveT); saveT = setTimeout(saveNow, 120); }
+function saveNow() {
+  clearTimeout(saveT); dirty = false;
+  S.meta = { updatedAt: Date.now() };
+  storeLocal(); schedulePush();
+}
+function storeLocal() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+const flush = () => { if (dirty) saveNow(); else storeLocal(); };
+window.addEventListener('pagehide', flush);
+document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+
+/* ---------- conta (login com Google) e sincronização com a nuvem ----------
+   Os dados continuam no aparelho (funciona sem internet) e são copiados para o Supabase.
+   Quem pode ler/gravar é decidido pelas regras do banco (RLS), não por este código. */
+const SB = (window.supabase && P.supabaseUrl) ? window.supabase.createClient(P.supabaseUrl, P.supabaseKey, {
+  auth: { flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: 'papaiforte.auth' }
+}) : null;
+const SYNC_KEY = 'papaiforte.sync';
+let session = null, pushT = null, busy = false;
+function syncInfo() { try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || {}; } catch (e) { return {}; } }
+function setSyncInfo(o) { try { localStorage.setItem(SYNC_KEY, JSON.stringify({ ...syncInfo(), ...o })); } catch (e) {} }
+// entrou alguma vez neste aparelho: se estiver sem internet e a biblioteca não carregar, o app abre mesmo assim
+const authed = () => !!session || (!SB && !!syncInfo().email);
+
+async function startAuth() {
+  if (!SB) return;
+  try {
+    const { data } = await SB.auth.getSession();
+    session = data.session;
+  } catch (e) { session = null; }
+  if (/[?&](code|error)=/.test(location.search)) {
+    const err = new URLSearchParams(location.search).get('error_description');
+    history.replaceState(null, '', location.pathname + (location.hash || '#hoje'));
+    if (err && !session) setTimeout(() => toast('Não deu para entrar: ' + err), 300);
+  }
+  SB.auth.onAuthStateChange((ev, s) => {
+    const was = !!session; session = s;
+    if (s && !was) { setSyncInfo({ email: s.user.email }); render(false); pull(true); }
+    if (!s && was) render(false);
+  });
+  if (session) { setSyncInfo({ email: session.user.email }); pull(true); }
+}
+async function signIn() {
+  if (!SB) { toast('Sem internet para entrar agora'); return; }
+  const { error } = await SB.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname, queryParams: { prompt: 'select_account' } } });
+  if (error) toast('Não deu para entrar: ' + error.message);
+}
+async function signOut() {
+  if (!confirm('Sair da conta neste aparelho? Seus dados continuam guardados na nuvem.')) return;
+  flush();
+  if (SB) await SB.auth.signOut().catch(() => {});
+  session = null; setSyncInfo({ email: null }); render(false);
+}
+
+// junta dois estados dia a dia; quando os dois têm o mesmo dia, vale o lado alterado por último
+function mergeState(local, remote) {
+  const remoteNewer = (remote.meta.updatedAt || 0) >= (local.meta.updatedAt || 0);
+  const out = { config: remoteNewer ? { ...local.config, ...remote.config } : { ...remote.config, ...local.config } };
+  ['food', 'train', 'weight'].forEach(k => {
+    const a = local[k] || {}, b = remote[k] || {}; out[k] = {};
+    new Set([...Object.keys(a), ...Object.keys(b)]).forEach(d => { out[k][d] = (d in a && d in b) ? (remoteNewer ? b[d] : a[d]) : (d in a ? a[d] : b[d]); });
+  });
+  out.meta = { updatedAt: Math.max(local.meta.updatedAt || 0, remote.meta.updatedAt || 0) };
+  return out;
+}
+const sameData = (a, b) => JSON.stringify({ ...a, meta: 0 }) === JSON.stringify({ ...b, meta: 0 });
+
+async function pull(first) {
+  if (!SB || !session || busy || !navigator.onLine) return;
+  busy = true;
+  try {
+    const { data, error } = await SB.from('app_state').select('data').eq('user_id', session.user.id).maybeSingle();
+    if (error) { syncError(error); return; }
+    if (!data) { busy = false; await push(); if (first) toast('Seus dados foram salvos na nuvem ☁️'); return; }
+    const remote = normalize(data.data), merged = mergeState(S, remote);
+    if (!sameData(merged, S)) { S = merged; storeLocal(); applyMealTimes(); render(true); if (first) toast('Dados sincronizados ☁️'); }
+    setSyncInfo({ at: Date.now(), pending: false, denied: false });
+    if (!sameData(merged, remote)) { busy = false; await push(); }
+  } catch (e) { /* sem rede: tenta depois */ }
+  finally { busy = false; }
+}
+function schedulePush() {
+  if (!SB || !session) return;
+  setSyncInfo({ pending: true });
+  clearTimeout(pushT); pushT = setTimeout(push, 1500);
+}
+async function push() {
+  if (!SB || !session) return;
+  if (!navigator.onLine) { setSyncInfo({ pending: true }); return; }
+  try {
+    const { error } = await SB.from('app_state').upsert({ user_id: session.user.id, data: S, updated_at: new Date().toISOString() });
+    if (error) { syncError(error); return; }
+    setSyncInfo({ at: Date.now(), pending: false, denied: false });
+    const st = document.getElementById('sync-status'); if (st) st.innerHTML = syncLine();
+  } catch (e) { setSyncInfo({ pending: true }); }
+}
+function syncError(error) {
+  const code = String(error.code || ''), msg = String(error.message || '');
+  // regra do banco recusou: esta conta Google não tem acesso
+  if (code === '42501' || /row-level security|permission denied/i.test(msg)) {
+    setSyncInfo({ denied: true });
+    toast('Esta conta não tem acesso ao Papai Forte');
+    SB.auth.signOut().catch(() => {}); session = null; setSyncInfo({ email: null }); render(false);
+    return;
+  }
+  setSyncInfo({ pending: true });
+}
+function syncLine() {
+  const i = syncInfo();
+  if (!session) return 'Sem conexão com a conta agora.';
+  if (i.pending) return '⏳ Alterações esperando internet para ir à nuvem.';
+  return i.at ? `☁️ Sincronizado às ${new Date(i.at).toTimeString().slice(0, 5)}` : '☁️ Conectado';
+}
+function loginView() {
+  return `<div class="login">
+    <img class="login-logo" src="icons/icon-512.png" alt="">
+    <div class="wordmark big">Papai <b>Forte</b><small>Projeto 90 dias</small></div>
+    <p class="muted">Entre com a sua conta Google para ver e salvar seus dados.</p>
+    ${SB ? `<button class="btn primary block go" data-act="sign-in"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#fff" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#fff" opacity=".85" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#fff" opacity=".7" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2z"/><path fill="#fff" opacity=".55" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.1 7.4L6.4 10C7.2 7.7 9.4 5.9 12 5.9z"/></svg> Entrar com Google</button>`
+      : `<p class="small">Sem internet agora. Conecte-se para entrar pela primeira vez.</p><button class="btn block" onclick="location.reload()">Tentar de novo</button>`}
+    <p class="tiny muted">Acesso restrito ao dono do app. Os dados ficam protegidos na nuvem e também neste aparelho.</p>
+  </div>`;
+}
 
 /* ---------- utilidades ---------- */
 const pad = n => String(n).padStart(2, '0');
@@ -710,6 +831,10 @@ screens.guia = () => {
     <p class="small muted" id="cfg-goals" style="margin:0">${goalsLine()}</p>
     <div><label class="lb" for="c-theme">Aparência</label><select id="c-theme" data-theme-sel><option value="auto" ${theme === 'auto' ? 'selected' : ''}>Automática (do celular)</option><option value="light" ${theme === 'light' ? 'selected' : ''}>Clara</option><option value="dark" ${theme === 'dark' ? 'selected' : ''}>Escura</option></select></div>
   </div></section>
+  ${session ? `<section class="card"><h3>👤 Conta</h3>
+    <p class="small" style="margin:6px 0 2px">Conectado como <b>${esc(session.user.email || '')}</b></p>
+    <p class="small muted" id="sync-status" style="margin:0 0 10px">${syncLine()}</p>
+    <div class="row wrap"><button class="btn sm" data-act="sync-now">🔄 Sincronizar agora</button><button class="btn ghost sm" data-act="sign-out">Sair da conta</button></div></section>` : ''}
   <section class="card" id="meal-times"><h3>🍽️ Horários das refeições</h3>
     <p class="small muted" style="margin:4px 0 10px">Mude para a sua rotina. A refeição aparece na aba Comida 30 min antes do horário.</p>
     <div class="mt-grid">${P.meals.filter(m => MEAL_DEF[m.id] !== '—').map(m => `<label class="mt-row"><span>${m.name}${m.opt ? ' <i class="muted">(opcional)</i>' : ''}</span>
@@ -740,6 +865,8 @@ const goalsLine = () => `Massa magra ~${fmt(lean())} kg · meta 90 dias (15%) <b
 const TABS = ['hoje', 'comida', 'treino', 'peso', 'cal', 'guia'];
 function route() { const h = location.hash.replace('#', ''); return TABS.includes(h) ? h : 'hoje'; }
 function render(keepScroll) {
+  if (!authed()) { document.body.classList.add('locked'); $app.innerHTML = loginView(); return; }
+  document.body.classList.remove('locked');
   const r = route(), y = window.scrollY;
   $app.innerHTML = screens[r]();
   document.querySelectorAll('nav.tabs a').forEach(a => { if (a.dataset.tab === r) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
@@ -881,6 +1008,9 @@ $app.addEventListener('click', e => {
   }
   if (a === 'food-all') { ui.foodAll = !ui.foodAll; render(true); window.scrollTo(0, 0); return; }
   if (a === 'meal-extra') { ui.foodExtra = ui.foodExtra === b.dataset.meal ? null : b.dataset.meal; render(true); return; }
+  if (a === 'sign-in') { b.disabled = true; b.textContent = 'Abrindo o Google…'; signIn(); return; }
+  if (a === 'sign-out') { signOut(); return; }
+  if (a === 'sync-now') { b.disabled = true; pull().then(() => { b.disabled = false; const st = document.getElementById('sync-status'); if (st) st.innerHTML = syncLine(); toast('Sincronizado ☁️'); }); return; }
   if (a === 'meal-times-reset') {
     if (!confirm('Voltar aos horários do plano?')) return;
     delete S.config.mealTimes; applyMealTimes(); saveNow(); render(true); toast('Horários do plano restaurados'); return;
@@ -1034,7 +1164,7 @@ $app.addEventListener('change', e => {
         const j = JSON.parse(r.result);
         if (!j || typeof j !== 'object' || !('train' in j || 'food' in j || 'weight' in j)) throw new Error('formato');
         if (!confirm('Importar este backup? Os dados atuais deste celular serão substituídos.')) return;
-        S = { config: { ...P.defaults, ...(j.config || {}) }, food: j.food || {}, train: j.train || {}, weight: j.weight || {} };
+        S = normalize(j);
         applyMealTimes(); saveNow(); toast('Backup importado ✅'); render(true);
       } catch (err) { toast('Arquivo inválido'); }
     };
@@ -1172,11 +1302,12 @@ let lastDay = today();
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) return;
   if (today() !== lastDay) { lastDay = today(); ui.foodDate = ui.trainDate = ui.weightDate = lastDay; render(false); }
-  applyInbox();
+  applyInbox(); pull();
 });
+window.addEventListener('online', () => { if (syncInfo().pending) push(); else pull(); });
 applyMealTimes();
-render(false);
-applyInbox();
+$app.innerHTML = '<div class="splash"><img src="icons/icon-192.png" alt=""></div>';
+startAuth().then(() => { render(false); applyInbox(); });
 // veio pelo toque na notificação de água: pergunta se bebeu (só marca se confirmar)
 if (new URLSearchParams(location.search).get('agua') === '1') {
   history.replaceState(null, '', location.pathname + (location.hash || '#hoje'));
