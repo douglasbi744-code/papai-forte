@@ -2,7 +2,13 @@
 window.PLAN = {
   heightCm: 167,
   defaults: { start: '2026-11-30', w0: 74, bf0: 22 },
-  goals: { kcal: 1900, prot: 150, water: 12 },
+  goals: { kcal: 1900, prot: 150, water: 6 },   // água = garrafas de 500 ml (3 L)
+  bottleMl: 500,
+  // horários dos lembretes de água (horário de Brasília) — iguais ao .github/workflows/lembretes-agua.yml
+  waterTimes: ['07:00', '09:00', '11:00', '13:00', '15:00', '17:00', '19:00', '21:00'],
+  // chave pública das notificações (a privada fica só no GitHub, como segredo)
+  vapidPublic: 'BFSlNw5ENpbrFr_d7_BjmrSjIPUJUxaKbMNlb1IHjo4yw8yB4ewkfTD-upH8amLgZ6KbC5zXPr3bSV8S27fAQUM',
+  repo: 'douglasbi744-code/papai-forte',
 
   meals: [
     { id: 'pre', time: '05:15', name: 'Pré-treino', opt: true, kcal: 0, prot: 0,

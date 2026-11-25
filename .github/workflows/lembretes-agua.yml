@@ -1,0 +1,42 @@
+name: Lembretes de água
+
+on:
+  schedule:
+    # 07, 09, 11, 13, 15, 17, 19 e 21 h de Brasília (UTC-3). O GitHub pode atrasar alguns minutos.
+    - cron: '7 0,10,12,14,16,18,20,22 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write   # só para o "mantém vivo" semanal (o GitHub desliga agendamentos após 60 dias sem commits)
+  issues: write     # fechar cadastros de celulares que não existem mais
+
+concurrency:
+  group: lembretes-agua
+  cancel-in-progress: false
+
+jobs:
+  enviar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save --no-audit --no-fund web-push@3.6.7
+      - name: Enviar notificação
+        run: node .github/scripts/enviar-lembrete.mjs
+        env:
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          OWNER: ${{ github.repository_owner }}
+      - name: Mantém o agendamento vivo (segunda, 1º envio do dia)
+        if: github.event_name == 'schedule'
+        run: |
+          if [ "$(date -u +%u)" = "1" ] && [ "$(date -u +%H)" = "10" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "chore: mantém lembretes de água ativos"
+            git push
+          fi

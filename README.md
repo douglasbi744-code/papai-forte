@@ -40,6 +40,22 @@ app/
 
 Quem tiver "reduzir movimento" ligado no celular vê tudo sem animação.
 
+## Como o app funciona no dia a dia
+
+- **Água:** a referência é uma garrafa de 500 ml, então a meta de 3 L são 6 garrafas. Toque na garrafa quando terminar de beber.
+- **Treino guiado:** toque em ▶ Iniciar treino e o app mostra um exercício por vez, com o tempo de treino correndo.
+  - "Concluir · próximo exercício" passa para o seguinte.
+  - No fim, você anota a dor lombar e toca em 🏁 Finalizar treino.
+  - "Ver lista completa" mostra todos os exercícios para corrigir algum registro.
+- **Comida:** só aparece a refeição da vez, liberada 30 min antes do horário.
+  - Ao registrar ("Comi o plano", "Registrar" ou "Não vou fazer"), o card sai da tela e o app fica esperando a próxima refeição, com contagem regressiva.
+  - "Ver todas as refeições do dia" mostra a lista completa.
+- **Lembretes de água (notificações):** o workflow `.github/workflows/lembretes-agua.yml` envia um aviso às 7, 9, 11, 13, 15, 17, 19 e 21 h.
+  - A notificação só pergunta. A garrafa só é marcada se você tocar em "✅ Bebi 500 ml" ou confirmar no app.
+  - Para ativar: Guia → Lembretes de água → Ativar. Depois, cadastre o celular abrindo uma issue no GitHub; o próprio app monta o texto.
+  - Para mudar os horários, edite o `cron` do workflow e `waterTimes` em `app/data.js`.
+  - As chaves ficam nos segredos do repositório: `VAPID_PUBLIC_KEY` e `VAPID_PRIVATE_KEY`.
+
 ## Extras além da especificação
 
 - Cronômetro de descanso (90 s, com +15 s) que vibra quando acaba.
