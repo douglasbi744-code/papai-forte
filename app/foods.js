@@ -47,28 +47,71 @@
     ['creme de leite', 220, 2, 15],
     ['leite condensado', 320, 8, 20],
     ['whey|whey protein|proteina em po', 400, 80, 30, { dose: 30, scoop: 30, medida: 30, colher: 15 }],
-    // carnes e proteínas
-    ['frango grelhado|peito de frango|file de frango|frango desfiado|frango cozido|frango|sassami', 160, 32, 120, { file: 120, bife: 100, pedaco: 80, colher: 25 }],
-    ['frango frito|coxa de frango|sobrecoxa|asa de frango|coxinha da asa|frango assado', 215, 26, 90, { pedaco: 90 }],
-    ['frango empanado|nuggets|nugget', 270, 15, 20],
-    ['carne moida', 212, 27, 100, { colher: 25 }],
-    ['picanha|maminha|fraldinha|cupim|contra file|alcatra|churrasco', 260, 27, 120, { fatia: 60, pedaco: 60 }],
-    ['costela', 370, 20, 150],
-    ['carne de panela|carne cozida|carne assada|lagarto|acem|musculo', 200, 28, 120, { pedaco: 60, fatia: 60, colher: 25 }],
-    ['bife|patinho|carne|carne vermelha|carne magra|file mignon', 219, 32, 100, { bife: 100, pedaco: 60, colher: 25 }],
-    ['figado|bife de figado', 190, 27, 100],
-    ['peixe|tilapia|merluza|pescada|file de peixe', 130, 26, 120, { file: 120, pedaco: 80 }],
-    ['salmao', 210, 23, 120, { file: 120 }],
-    ['atum|atum em lata|atum em agua', 117, 26, 60, { lata: 120, colher: 20 }],
-    ['sardinha|sardinha em lata', 200, 24, 80, { lata: 84 }],
-    ['camarao', 100, 21, 100],
-    ['linguica|calabresa|linguica toscana', 300, 16, 60, { gomo: 60, fatia: 10, rodela: 6 }],
+    // ---- carne de boi (grelhada/assada, por 100 g) ----
+    ['patinho|bife de patinho|patinho moido', 219, 35.9, 100, { bife: 100, pedaco: 60, colher: 25, fatia: 60 }],
+    ['coxao mole|chã de dentro|cha de dentro', 219, 32, 100, { bife: 100, pedaco: 60, fatia: 60 }],
+    ['coxao duro|chã de fora|cha de fora', 217, 31, 100, { bife: 100, pedaco: 60, fatia: 60 }],
+    ['lagarto|carne assada|rosbife', 200, 30, 100, { fatia: 50, pedaco: 60 }],
+    ['file mignon|medalhao|mignon', 220, 32, 120, { bife: 120, medalhao: 120, pedaco: 60 }],
+    ['alcatra|bife de alcatra|miolo de alcatra|baby beef|top sirloin', 235, 32, 120, { bife: 120, fatia: 60, pedaco: 60 }],
+    ['maminha|maminha de alcatra', 230, 30, 120, { fatia: 60, pedaco: 60 }],
+    ['fraldinha|vazio', 250, 28, 120, { fatia: 60, pedaco: 60 }],
+    ['contra file|contrafile|bife ancho|ancho|chorizo|entrecot|entrecote|bife de chorizo', 278, 32, 150, { bife: 150, fatia: 60, pedaco: 60 }],
+    ['picanha|picanha bovina|picanha de boi', 290, 26, 120, { fatia: 60, pedaco: 60 }],
+    ['cupim', 330, 20, 120, { fatia: 60, pedaco: 60 }],
+    ['acem|carne de panela|carne cozida|paleta|peito bovino|carne de segunda', 215, 27, 120, { pedaco: 60, fatia: 60, colher: 25 }],
+    ['musculo|ossobuco', 190, 31, 120, { pedaco: 60, colher: 25 }],
+    ['costela|costela bovina|costela de boi|costela no bafo|janela', 370, 20, 150, { pedaco: 150 }],
+    ['chuleta|t bone|t-bone|bisteca bovina', 290, 25, 200, { bife: 200 }],
+    ['carne moida|carne moida refogada|moida', 212, 27, 100, { colher: 25 }],
+    ['carne seca|charque|jabá|jaba', 250, 31, 80, { colher: 25, pedaco: 40 }],
+    ['carne de sol', 260, 30, 100, { pedaco: 60 }],
+    ['figado|bife de figado|figado acebolado', 190, 27, 100, { bife: 100 }],
+    ['lingua|lingua bovina', 230, 19, 100, { fatia: 30 }],
+    ['rabada', 300, 20, 150],
+    ['dobradinha|bucho', 130, 20, 150],
+    ['churrasco|espetinho de carne|espeto de carne', 260, 27, 120, { espeto: 90, espetinho: 90, pedaco: 60 }],
+    ['bife|carne|carne vermelha|carne magra|carne grelhada', 219, 32, 100, { bife: 100, pedaco: 60, colher: 25, fatia: 60 }],
+    // ---- carne de porco ----
+    ['picanha de porco|picanha suina|picanha de porco assada', 260, 26, 120, { fatia: 60, pedaco: 60 }],
+    ['lombo|lombo de porco|lombo suino|lombinho|lombo assado|file suino|file de porco|file mignon suino|mignon suino', 210, 35.7, 120, { fatia: 50, bife: 100, pedaco: 60, medalhao: 80 }],
+    ['pernil|pernil de porco|pernil assado|pernil suino', 262, 32, 120, { fatia: 60, pedaco: 60 }],
+    ['bisteca|bisteca de porco|bisteca suina|costeleta de porco|costeleta suina', 280, 29, 120, { bife: 120, unidade: 120 }],
+    ['costelinha|costelinha de porco|costela de porco|costela suina|costelinha suina|costelinha barbecue', 400, 26, 150, { pedaco: 50, ripa: 150 }],
+    ['carre|carre de porco|carre suino', 230, 28, 150],
+    ['copa lombo|sobrepaleta|paleta suina|paleta de porco', 250, 22, 120, { fatia: 60, pedaco: 60 }],
+    ['panceta|barriga de porco|pancetta', 500, 15, 80, { fatia: 40, pedaco: 40 }],
+    ['torresmo|pururuca', 550, 30, 30, { pedaco: 10, porcao: 100 }],
+    ['carne de porco|porco|suino|carne suina', 250, 28, 120, { bife: 100, pedaco: 60, fatia: 60 }],
+    // ---- aves ----
+    ['frango grelhado|peito de frango|file de frango|frango desfiado|frango cozido|frango|sassami|peito', 160, 32, 120, { file: 120, bife: 100, pedaco: 80, colher: 25 }],
+    ['coxa de frango|sobrecoxa|frango assado|coxa e sobrecoxa|coxa|sobrecoxa assada', 215, 26, 90, { pedaco: 90, unidade: 90 }],
+    ['frango frito|asa de frango|coxinha da asa|tulipa|frango a passarinho|asinha', 260, 24, 90, { pedaco: 40, unidade: 40 }],
+    ['frango empanado|nuggets|nugget|file de frango empanado', 270, 15, 20, { file: 120 }],
+    ['coracao de frango|coracao|coracaozinho', 207, 22, 100, { espeto: 80, espetinho: 80, unidade: 6 }],
+    ['moela|moela de frango', 150, 25, 100],
+    ['peru|peito de peru assado|chester|tender', 160, 26, 100, { fatia: 30 }],
+    ['pato|marreco', 240, 23, 120],
+    // ---- outras carnes ----
+    ['cordeiro|carneiro|costela de cordeiro|pernil de cordeiro|cabrito|bode', 260, 25, 120, { pedaco: 60 }],
+    ['coelho', 170, 30, 120],
+    // ---- peixes e frutos do mar ----
+    ['peixe|tilapia|merluza|pescada|file de peixe|cacao|linguado|robalo|pescada amarela|saint peter|panga|badejo', 125, 26, 120, { file: 120, posta: 150, pedaco: 80 }],
+    ['peixe frito|file de peixe frito|peixe empanado|isca de peixe', 230, 20, 120, { file: 120, isca: 15 }],
+    ['salmao|truta', 210, 23, 120, { file: 120, posta: 150 }],
+    ['bacalhau|bacalhoada', 140, 30, 120, { posta: 150, lasca: 30 }],
+    ['atum|atum em lata|atum em agua|atum fresco', 117, 26, 60, { lata: 120, colher: 20, posta: 150 }],
+    ['sardinha|sardinha em lata|sardinha frita', 200, 24, 80, { lata: 84, unidade: 40 }],
+    ['camarao|camarao frito|camarao alho e oleo', 100, 21, 100, { unidade: 10, colher: 25 }],
+    ['lula|polvo|mexilhao|marisco|siri|caranguejo', 95, 18, 100],
+    // ---- embutidos ----
+    ['linguica|calabresa|linguica toscana|linguica de frango|linguica de porco', 300, 16, 60, { gomo: 60, fatia: 10, rodela: 6 }],
     ['salsicha', 260, 12, 45],
     ['presunto', 94, 14, 15],
     ['peito de peru|blanquet', 100, 16, 15],
     ['mortadela|salame', 300, 14, 15],
     ['bacon', 500, 30, 15, { fatia: 8, tira: 8 }],
-    ['hamburguer de carne|hamburguer caseiro|carne de hamburguer', 250, 17, 90],
+    ['hamburguer de carne|hamburguer caseiro|carne de hamburguer|burger', 250, 17, 90],
     ['tofu', 76, 8, 100],
     // arroz, massas, feijão, tubérculos
     ['arroz integral', 124, 2.6, 120, { colher: 30, escumadeira: 90 }],
@@ -210,7 +253,7 @@
   const ACC = { pao: 'pão', frances: 'francês', feijao: 'feijão', macarrao: 'macarrão', requeijao: 'requeijão', maca: 'maçã', mamao: 'mamão', melao: 'melão',
     acucar: 'açúcar', cafe: 'café', cha: 'chá', salmao: 'salmão', camarao: 'camarão', file: 'filé', pure: 'purê', linguica: 'linguiça', brocolis: 'brócolis',
     abobora: 'abóbora', agua: 'água', acai: 'açaí', cachaca: 'cachaça', grao: 'grão', sirio: 'sírio', proteina: 'proteína', energetico: 'energético',
-    isotonico: 'isotônico', figado: 'fígado', tilapia: 'tilápia', hamburguer: 'hambúrguer', parmegiana: 'parmegiana', cuscuz: 'cuscuz', oleo: 'óleo', geleia: 'geleia', amendoim: 'amendoim', mussarela: 'muçarela', sanduiche: 'sanduíche' };
+    isotonico: 'isotônico', figado: 'fígado', tilapia: 'tilápia', hamburguer: 'hambúrguer', parmegiana: 'parmegiana', cuscuz: 'cuscuz', oleo: 'óleo', geleia: 'geleia', amendoim: 'amendoim', mussarela: 'muçarela', sanduiche: 'sanduíche', coxao: 'coxão', acem: 'acém', musculo: 'músculo', carre: 'carré', suina: 'suína', suino: 'suíno', lingua: 'língua', coracao: 'coração', cacao: 'cação', medalhao: 'medalhão', cha: 'chá', jaba: 'jabá', file: 'filé' };
   const foods = F.map(([names, kcal, prot, d, units]) => {
     const all = names.split('|').map(n => n.trim());
     return { name: all[0].split(' ').map(w => ACC[w] || w).join(' '), keys: all.map(norm), kcal, prot, d, units: units ? Object.fromEntries(Object.entries(units).map(([k, v]) => [norm(k), v])) : {} };
@@ -225,7 +268,8 @@
     colher: 25, colherinha: 5, 'colher de cha': 5, 'colher de sopa': null, concha: 140, escumadeira: 90, fatia: 25, rodela: 10,
     xicara: 200, copo: 250, caneca: 300, taca: 150, lata: 350, garrafa: 600, prato: 300, porcao: null, pedaco: null,
     unidade: null, un: null, file: 120, bife: 100, pote: 170, potinho: 100, pacote: null, punhado: 30, dose: 30, scoop: 30, medida: 30,
-    tigela: 300, gomo: 60, quadrado: 5, barra: 90, saco: 100, bola: 60, pegador: 100, fio: 5, ponta: 5, tira: 8, ramo: 25, espiga: 100, cacho: 150, long: 355, latao: 473
+    tigela: 300, gomo: 60, quadrado: 5, barra: 90, saco: 100, bola: 60, pegador: 100, fio: 5, ponta: 5, tira: 8, ramo: 25, espiga: 100, cacho: 150, long: 355, latao: 473,
+    posta: 150, espeto: 90, espetinho: 90, medalhao: 100, ripa: 150, lasca: 30, isca: 15, tablete: 25, quadradinho: 5, caixinha: 200, temaki: 160, combinado: 300, tulipa: 300
   };
   const unitKeys = Object.keys(UNITS).map(u => [norm(u), u]).sort((a, b) => b[0].length - a[0].length);
   const SIZE = { pequeno: 0.7, pequena: 0.7, grande: 1.4, generoso: 1.4, generosa: 1.4, cheio: 1.3, cheia: 1.3, rasa: 0.7, raso: 0.7, duplo: 2, dupla: 2 };
