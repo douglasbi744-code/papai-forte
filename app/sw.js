@@ -1,6 +1,6 @@
 // Service worker: app offline + notificações de água.
-// Ao mudar qualquer arquivo do app, aumente a versão abaixo.
-const VERSION = 'pf-v3';
+// Ao mudar qualquer arquivo do app, aumente a versão abaixo e o ?v= em index.html.
+const VERSION = 'pf-v4';
 const INBOX = 'pf-inbox';
 const SHELL = [
   './', './index.html', './styles.css', './data.js', './app.js', './manifest.webmanifest',
@@ -8,7 +8,7 @@ const SHELL = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -37,7 +37,8 @@ self.addEventListener('fetch', e => {
 
   // App: rede primeiro (pega atualizações), cache se estiver offline
   e.respondWith(
-    fetch(req).then(r => {
+    // no-cache: sempre confere com o servidor (o GitHub Pages manda guardar por 10 min)
+    fetch(new Request(req.url, { cache: 'no-cache', credentials: 'same-origin' })).then(r => {
       const copy = r.clone();
       caches.open(VERSION).then(c => c.put(req, copy));
       return r;

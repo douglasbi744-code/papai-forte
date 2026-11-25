@@ -79,6 +79,6 @@ Para instalar e funcionar offline, o PWA precisa estar em um endereço **https**
 - **Android (Chrome):** abra o link → menu ⋮ → **Adicionar à tela inicial / Instalar app**.
 - **iPhone (Safari):** abra o link → botão Compartilhar → **Adicionar à Tela de Início**.
 
-Para atualizar o app depois de mexer nos arquivos, aumente `VERSION` em `app/sw.js` e publique de novo. O celular pega a versão nova ao abrir o app.
+Para atualizar o app depois de mexer nos arquivos, aumente `VERSION` em `app/sw.js` e o `?v=` dos arquivos em `app/index.html` e publique de novo. O celular pega a versão nova ao abrir o app.
 
 > Este plano não substitui acompanhamento profissional. Por causa do abaulamento em L4–L5, valide o treino com ortopedista ou fisioterapeuta.
