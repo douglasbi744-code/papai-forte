@@ -1066,13 +1066,42 @@ async function enablePush() {
     const perm = await Notification.requestPermission();
     if (perm !== 'granted') { toast('Sem permissão, sem lembretes 😕'); return; }
     const reg = await navigator.serviceWorker.ready;
+    const opts = { userVisibleOnly: true, applicationServerKey: b64ToU8(P.vapidPublic) };
     let sub = await reg.pushManager.getSubscription();
-    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(P.vapidPublic) });
+    if (!sub) {
+      // "push service error" às vezes é passageiro: limpa e tenta de novo até 3 vezes
+      for (let i = 0; i < 3 && !sub; i++) {
+        try { sub = await reg.pushManager.subscribe(opts); }
+        catch (e) {
+          if (i === 2) throw e;
+          const old = await reg.pushManager.getSubscription(); if (old) await old.unsubscribe().catch(() => {});
+          await new Promise(r => setTimeout(r, 1500 * (i + 1)));
+        }
+      }
+    }
     const old = pushSaved(), json = JSON.stringify(sub);
     localStorage.setItem(PUSH_KEY, JSON.stringify({ sub: json, registered: !!(old && old.registered && old.sub === json) }));
     render(true);
     if (!(old && old.registered && old.sub === json)) registerSheet(); else toast('Lembretes ativos 🔔');
-  } catch (err) { toast('Não deu para ativar: ' + (err && err.message || err)); }
+  } catch (err) {
+    const msg = String(err && err.message || err);
+    if (/push service|registration failed/i.test(msg) || (err && err.name === 'AbortError')) {
+      sheet(`<h2>O celular recusou o cadastro de notificações</h2>
+        <p class="muted small">O erro veio do serviço de notificações do próprio celular (<i>${esc(msg)}</i>). No Android, ele depende do Google Play Services. Tente nesta ordem:</p>
+        <ol class="small" style="padding-left:18px;margin:0 0 12px">
+          <li>Abra o app no <b>Google Chrome</b> (não no navegador do WhatsApp, Samsung Internet, Brave ou Mi Browser).</li>
+          <li>Desligue a <b>economia de bateria</b> e a <b>economia de dados</b> e confira se a internet está boa.</li>
+          <li>Play Store → procure <b>Google Play Services</b> e <b>Chrome</b> → <b>Atualizar</b>. Depois reinicie o celular.</li>
+          <li>Chrome → ⋮ → Configurações → Configurações de sites → Notificações: veja se as notificações estão permitidas.</li>
+          <li>Toque de novo em <b>Ativar lembretes</b>.</li></ol>
+        <p class="tiny muted">Celulares Huawei mais novos não têm os serviços do Google e não recebem esse tipo de notificação.</p>
+        <button class="btn primary block" data-act2="push-retry">Tentar de novo</button>`, bg => {
+        bg.addEventListener('click', e => { if (e.target.closest('[data-act2="push-retry"]')) { const c = bg.querySelector('[data-close]'); if (c) c.click(); else bg.remove(); enablePush(); } });
+      });
+      return;
+    }
+    toast('Não deu para ativar: ' + msg);
+  }
 }
 function registerSheet() {
   const s = pushSaved(); if (!s) return;
