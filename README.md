@@ -10,6 +10,7 @@ app/
   styles.css            branding e layout (claro/escuro automático)
   data.js               plano fixo: refeições, treinos A/B/C, agenda, hábitos
   app.js                telas, regras de cálculo, gráficos, cronômetro
+  foods.js              tabela de alimentos para estimar calorias pelo texto
   sw.js                 service worker (offline). Mude VERSION a cada atualização
   manifest.webmanifest  nome, cores, ícones e atalhos do app
   icons/                icon.svg (fonte) + PNGs 180/192/512
@@ -51,6 +52,7 @@ Quem tiver "reduzir movimento" ligado no celular vê tudo sem animação.
 - **Comida:** só aparece a refeição da vez, liberada 30 min antes do horário.
   - Ao registrar ("Comi o plano", "Registrar" ou "Não vou fazer"), o card sai da tela e o app fica esperando a próxima refeição, com contagem regressiva.
   - "Ver todas as refeições do dia" mostra a lista completa.
+  - **Calorias pelo texto:** ao escrever o que comeu (ex.: "2 pães com ovo, 1 copo de suco"), o app estima kcal e proteína com a tabela de `app/foods.js` (cerca de 200 alimentos, com porções como fatia, colher, concha, copo e lata). Se você digitar os números à mão, eles valem. Se passar do plano da refeição ou da meta do dia, aparece um aviso com o que cortar.
 - **Lembretes de água (notificações):** o workflow `.github/workflows/lembretes-agua.yml` envia um aviso às 7, 9, 11, 13, 15, 17, 19 e 21 h.
   - A notificação só pergunta. A garrafa só é marcada se você tocar em "✅ Bebi 500 ml" ou confirmar no app.
   - Para ativar: Guia → Lembretes de água → Ativar. Depois, cadastre o celular abrindo uma issue no GitHub; o próprio app monta o texto.

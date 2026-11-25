@@ -386,10 +386,11 @@ function mealNowCard(m, v) {
     <p class="plan" style="font-size:.95rem">${esc(m.plan)}</p>
     <button class="btn good block go" data-act="meal-plan" data-meal="${m.id}">✓ Comi o plano</button>
     <details class="acc" style="margin-top:10px" ${draft ? 'open' : ''}><summary>Comi outra coisa</summary><div>
-      <textarea rows="2" data-meal="${m.id}" data-f="text" placeholder="O que você comeu?">${esc(v.text || '')}</textarea>
+      <textarea rows="2" data-meal="${m.id}" data-f="text" placeholder="Ex.: 2 pães com ovo, 1 copo de suco de laranja">${esc(v.text || '')}</textarea>
+      <div class="est" data-est="${m.id}">${estHTML(m, v)}</div>
       <div class="fields c2" style="margin-top:8px">
-        <div><label class="lb">kcal (opcional)</label><input class="n" inputmode="decimal" data-meal="${m.id}" data-f="kcal" value="${inVal(v.kcal)}" placeholder="—"></div>
-        <div><label class="lb">Proteína g (opcional)</label><input class="n" inputmode="decimal" data-meal="${m.id}" data-f="prot" value="${inVal(v.prot)}" placeholder="—"></div>
+        <div><label class="lb">kcal (estimado)</label><input class="n" inputmode="decimal" data-meal="${m.id}" data-f="kcal" value="${inVal(v.kcal)}" placeholder="—"></div>
+        <div><label class="lb">Proteína g (estimado)</label><input class="n" inputmode="decimal" data-meal="${m.id}" data-f="prot" value="${inVal(v.prot)}" placeholder="—"></div>
       </div>
       <button class="btn primary block" style="margin-top:10px" data-act="meal-reg" data-meal="${m.id}">Registrar</button></div></details>
     <p style="text-align:center;margin:6px 0 0"><button class="linkbtn" style="color:var(--muted)" data-act="meal-skip" data-meal="${m.id}">Não vou fazer esta refeição</button></p>
@@ -404,6 +405,7 @@ function mealListCard(m, v, isNext) {
     <p class="plan">${esc(m.plan)}</p>
     <label class="lb" for="m-${m.id}">O que você comeu</label>
     <textarea id="m-${m.id}" rows="2" data-meal="${m.id}" data-f="text" placeholder="Ex.: ${esc(m.quick || 'descreva aqui')}">${esc(v.text || '')}</textarea>
+    <div class="est" data-est="${m.id}">${v.ok && v.text === m.quick ? '' : estHTML(m, v)}</div>
     <div class="fields c2" style="margin-top:8px">
       <div><label class="lb">kcal</label><input class="n" inputmode="decimal" data-meal="${m.id}" data-f="kcal" value="${inVal(v.kcal)}" placeholder="—"></div>
       <div><label class="lb">Proteína (g)</label><input class="n" inputmode="decimal" data-meal="${m.id}" data-f="prot" value="${inVal(v.prot)}" placeholder="—"></div>
@@ -412,9 +414,63 @@ function mealListCard(m, v, isNext) {
       <button class="btn ghost sm" data-act="meal-clear" data-meal="${m.id}">Limpar</button></div></section>`;
 }
 
+/* ---------- estimativa de calorias pelo texto ---------- */
+const ZEROABLE = /refrigerante|suco|cerveja|energ|caldo de cana|achocolatado|vitamina|caipirinha|cachaça/;
+function cutIdeas(items, need) {
+  // corta primeiro o que tem muita caloria e pouca proteína
+  const list = items.filter(i => i.kcal >= 30).sort((a, b) => (b.kcal - 8 * b.prot) - (a.kcal - 8 * a.prot));
+  const out = []; let got = 0;
+  for (const i of list) {
+    if (got >= need || out.length >= 3) break;
+    let t, save;
+    if (ZEROABLE.test(i.name)) { save = i.kcal; t = `troque ${i.name} por água ou versão zero`; }
+    else if (i.qty >= 2 && Number.isInteger(i.qty)) {
+      const n = Math.max(1, Math.min(i.qty - 1, Math.ceil((need - got) / (i.kcal / i.qty))));
+      save = Math.round(i.kcal / i.qty * n); t = `tire ${n} ${i.name} (fica${i.qty - n > 1 ? "m" : ""} ${i.qty - n})`;
+    } else { save = Math.round(i.kcal / 2); t = `coma metade de ${i.name}`; }
+    out.push({ t, save }); got += save;
+  }
+  return { out, got };
+}
+function mealCheck(m, v, d) {
+  const kcal = num(v.kcal) || 0, plan = m.kcal || 0;
+  const day = foodTotals(d || ui.foodDate).kcal, dayOver = Math.round(day - P.goals.kcal);
+  const mealOver = plan ? Math.round(kcal - plan) : 0;
+  const over = Math.max(plan && mealOver > Math.max(60, plan * 0.1) ? mealOver : 0, dayOver > 0 ? dayOver : 0);
+  return { kcal, plan, day, dayOver, mealOver, over };
+}
+function estHTML(m, v, d) {
+  v = v || {};
+  if (!v.text || !v.text.trim() || !window.FOOD) return '';
+  const e = FOOD.estimate(v.text);
+  let h = '';
+  if (e.items.length) {
+    const li = i => `<li><span>${i.qty != null && i.qty !== 1 ? fmt(i.qty) + '× ' : ''}${i.name} <i>${i.grams} g</i></span><b>${i.kcal}</b></li>`;
+    h += `<div class="est-sum">🔎 <b>~${fmt(e.kcal, 0)} kcal · ${fmt(e.prot, 0)} g prot.</b>${v.manual ? ' <span class="muted">(você ajustou à mão)</span>' : ''}</div>
+      <ul class="est-list">${e.items.map(li).join('')}</ul>`;
+  }
+  if (e.unknown.length) h += `<p class="est-unk">Não reconheci: <b>${e.unknown.map(esc).join(', ')}</b>. Preencha as kcal à mão ou escreva de outro jeito (ex.: "2 fatias de pão").</p>`;
+  if (!e.items.length) return h;
+  const c = mealCheck(m, v, d);
+  if (c.over > 0) {
+    const ideas = cutIdeas(e.items, c.over);
+    const why = c.dayOver > 0 && c.dayOver >= c.mealOver
+      ? `O dia passa da meta: ${fmt(c.day, 0)} de ${fmt(P.goals.kcal, 0)} kcal (+${fmt(c.dayOver, 0)})`
+      : `Passou ${fmt(c.mealOver, 0)} kcal do plano desta refeição (${c.plan} kcal)`;
+    const rest = Math.max(10, Math.round((c.over - ideas.got) / 10) * 10);
+    const tips = ideas.out.length ? `<br>Para caber: ${ideas.out.map(x => `${x.t} <span class="nowrap">(−${x.save} kcal)</span>`).join('; ')}.` : '';
+    const comp = ideas.got < c.over
+      ? `<br>Se já comeu: compense tirando ~${fmt(ideas.out.length ? rest : c.over, 0)} kcal das próximas refeições (ex.: metade do arroz ou da batata do jantar).`
+      : '<br>Se já comeu, sem drama: compense nas próximas refeições.';
+    h += `<div class="alert warn est-warn"><span class="ic">⚠️</span><div><b>${why}.</b>${tips}${comp}</div></div>`;
+  } else if (c.plan) h += `<p class="est-ok">✓ Dentro do plano desta refeição (${c.plan} kcal)</p>`;
+  return h;
+}
+
 function foodTotalsHTML(ft) {
+  const over = ft.kcal > P.goals.kcal ? `<div class="alert warn" style="margin:10px 0 0"><span class="ic">⚠️</span><div><b>Passou ${fmt(ft.kcal - P.goals.kcal, 0)} kcal da meta do dia.</b> Nas próximas refeições, fique na proteína e nos legumes e corte arroz, batata, pão e doces. Amanhã volta ao plano normal.</div></div>` : '';
   return `<div class="card-h" style="margin-bottom:2px"><span class="eyebrow">Total do dia</span><span class="small muted">${ft.n} anotada${ft.n === 1 ? '' : 's'}</span></div>
-    ${meter('Calorias', ft.kcal, P.goals.kcal, 'kcal')}${meter('Proteína', ft.prot, P.goals.prot, 'g', 'g')}`;
+    ${meter('Calorias', ft.kcal, P.goals.kcal, 'kcal')}${meter('Proteína', ft.prot, P.goals.prot, 'g', 'g')}${over}`;
 }
 
 screens.treino = () => {
@@ -810,6 +866,7 @@ $app.addEventListener('click', e => {
     const done = () => {
       render(true);
       if (protBefore < P.goals.prot && protAfter >= P.goals.prot) celebrate('Meta de proteína batida! 🥩');
+      else if (card && a === 'meal-reg' && mealCheck(m, cur, d).over > 0) toast(`${m.name} registrado · passou ${fmt(mealCheck(m, cur, d).over, 0)} kcal, compense nas próximas ⚠️`);
       else if (card) { const n = mealFocus(d); toast(a === 'meal-skip' ? 'Ok, refeição pulada' : `${m.name} registrado ✅${n.cur ? '' : n.next ? ' · próximo: ' + n.next.name + ' ' + n.next.time : ''}`); }
     };
     if (card) { card.classList.add('leaving'); setTimeout(done, 420); } else done();
@@ -851,19 +908,32 @@ $app.addEventListener('click', e => {
   }
 });
 
+let estT;
 $app.addEventListener('input', e => {
   const el = e.target;
   // comida
   if (el.dataset.meal) {
     const d = ui.foodDate, f = foodDay(d, true), id = el.dataset.meal;
     const m = f.meals[id] = f.meals[id] || {};
-    if (el.dataset.f === 'text') m.text = el.value; else m[el.dataset.f] = num(el.value);
+    if (el.dataset.f === 'text') {
+      m.text = el.value;
+      // estima kcal/proteína pelo texto, a menos que você tenha digitado os números à mão
+      if (!m.manual && window.FOOD) {
+        const e = FOOD.estimate(m.text), card = el.closest('[data-meal-card]');
+        m.kcal = e.items.length ? e.kcal : null; m.prot = e.items.length ? e.prot : null;
+        if (card) card.querySelectorAll('input[data-f]').forEach(i => { i.value = inVal(m[i.dataset.f]); });
+      }
+    } else { m[el.dataset.f] = num(el.value); if (el.value.trim() !== '') m.manual = true; else delete m.manual; }
     // na lista completa, escrever já conta como registrado; na refeição da vez só com "Registrar"
     if (el.closest('[data-list]')) { delete m.skip; if (mealFilled(m)) { m.ok = true; m.ts = m.ts || Date.now(); } else delete m.ok; }
     if (!mealFilled(m) && !m.skip) delete f.meals[id];
     save();
     const card = $app.querySelector(`[data-meal-card="${id}"][data-list]`); if (card) card.classList.toggle('filled', !!(f.meals[id] && f.meals[id].ok));
     const tot = document.getElementById('food-totals'); if (tot) tot.innerHTML = foodTotalsHTML(foodTotals(d));
+    clearTimeout(estT); estT = setTimeout(() => {
+      const box = $app.querySelector(`[data-est="${id}"]`), meal = P.meals.find(x => x.id === id);
+      if (box && meal) box.innerHTML = estHTML(meal, f.meals[id] || {}, d);
+    }, 250);
     return;
   }
   // treino

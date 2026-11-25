@@ -340,3 +340,17 @@ nav.tabs .blob{position:absolute;top:7px;bottom:7px;left:7px;width:calc((100% - 
 .calstat span{font-size:.78rem;color:var(--muted)}
 .calstat.sun b{background:var(--sunrise);-webkit-background-clip:text;background-clip:text;color:transparent}
 .calstat.good b{color:var(--good)}
+
+/* estimativa de calorias */
+.est:empty{display:none}
+.est{margin-top:8px;font-size:.86rem}
+.est-sum{padding:8px 10px;border-radius:10px;background:var(--soft)}
+.est-list{list-style:none;margin:6px 0 0;padding:0 2px}
+.est-list li{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px dashed var(--line);color:var(--muted)}
+.est-list li span{color:var(--ink)}
+.est-list li i{font-style:normal;color:var(--muted);font-size:.78rem}
+.est-list li b{font-family:"Barlow Condensed",sans-serif;font-size:.95rem;color:var(--ink)}
+.est-unk{margin:6px 0 0;color:var(--muted);font-size:.8rem}
+.est-ok{margin:6px 0 0;color:var(--good);font-weight:600;font-size:.82rem}
+.est-warn{margin:8px 0 0;font-size:.84rem}
+.nowrap{white-space:nowrap}
