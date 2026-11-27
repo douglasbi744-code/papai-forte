@@ -89,3 +89,32 @@ Para instalar e funcionar offline, o PWA precisa estar em um endereço **https**
 Para atualizar o app depois de mexer nos arquivos, aumente `VERSION` em `app/sw.js` e o `?v=` dos arquivos em `app/index.html` e publique de novo. O celular pega a versão nova ao abrir o app.
 
 > Este plano não substitui acompanhamento profissional. Por causa do abaulamento em L4–L5, valide o treino com ortopedista ou fisioterapeuta.
+
+## Vários usuários (convite) e plano personalizado
+
+- **Quem entra:** só e-mails da tabela `allowed_emails` no Supabase. Cada pessoa só vê os próprios dados: as regras do banco (RLS) usam a função `is_allowed()`. O SQL está em `supabase/002-convidados-e-laudos.sql`, sem e-mails, porque o repositório é público.
+- **Primeiro acesso:** quem entra sem dados responde um questionário de 8 etapas:
+  - consentimento LGPD;
+  - dados pessoais;
+  - medidas;
+  - objetivo;
+  - treino;
+  - alimentação;
+  - saúde (condições, dor e laudo);
+  - resumo do plano.
+- **Plano:** `app/plan.js` monta tudo por regras:
+  - calorias pela fórmula de Mifflin-St Jeor com fator de atividade;
+  - proteína por kg;
+  - água em 35 ml por kg;
+  - refeições com porções e horários;
+  - treinos A/B/C a partir de uma biblioteca de exercícios com as condições que proíbem cada exercício (`avoid`) ou pedem cuidado (`care`), mais exercícios de reforço por condição.
+  - Problema cardíaco ou gestação: só atividade leve e aviso de liberação médica.
+- **Plano original (Douglas):** perfil `mode: 'fixed'`, com o plano de `data.js`. Quem já tinha dados antes do questionário recebe esse modo automaticamente.
+- **Laudos:** bucket privado `laudos` no Supabase Storage, numa pasta por usuário. O app guarda e mostra o laudo, mas não lê o conteúdo.
+- **Apagar dados:** Guia → Conta → Apagar meus dados.
+- **Testar no PC sem login:** http://localhost:5190/?demo=1. Só funciona em localhost.
+
+### Para convidar alguém
+1. Supabase → SQL Editor: `insert into public.allowed_emails (email) values ('<e-mail do convidado>');`
+2. Google Cloud → projeto Papai Forte → Google Auth Platform → Público-alvo → Usuários de teste → adicionar o e-mail.
+3. Supabase → Authentication → Sign In / Providers → ligar **Allow new users to sign up**. A lista de convidados e o modo Teste do Google continuam barrando quem não foi convidado.

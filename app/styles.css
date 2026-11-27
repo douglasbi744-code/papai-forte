@@ -379,3 +379,26 @@ body.locked nav.tabs, body.locked #timer{display:none}
 .wordmark.big{font-size:2rem;line-height:1}
 .wordmark.big small{display:block;font-size:.8rem;margin-top:6px}
 .login .btn.go{display:flex;align-items:center;justify-content:center;gap:10px;font-size:1.05rem;padding:14px}
+
+/* questionário */
+.ob h2{margin:0 0 6px}
+.ob-progress{height:6px;border-radius:6px;background:var(--soft);overflow:hidden;margin-top:4px}
+.ob-progress span{display:block;height:100%;background:var(--sunrise);border-radius:6px;transition:width .4s}
+.ob-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ob-col{display:grid;gap:8px}
+.ob-opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:12px 14px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer}
+.ob-opt small{color:var(--muted);font-size:.8rem}
+.ob-opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.ob-days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.ob-days button{aspect-ratio:1;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:600 1rem "Barlow Condensed",sans-serif;cursor:pointer}
+.ob-days button[aria-pressed="true"]{background:var(--sunrise);border-color:transparent;color:var(--on-accent)}
+.ob-check{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:var(--soft);margin-top:8px;cursor:pointer;font-size:.92rem}
+.ob-check input{width:20px;height:20px;margin-top:2px;flex:none;accent-color:var(--accent)}
+.ob-check span small{display:block;color:var(--muted);font-size:.78rem}
+.ob-check.red span b{color:var(--warn)}
+.ob-conds{display:grid;gap:0}
+.ob-nav{display:flex;gap:8px;position:sticky;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);padding-top:6px}
+.laudo-box{margin-top:14px;padding:12px;border-radius:14px;border:1.5px dashed var(--line)}
+.laudo-list li{gap:6px}
+.splash p{margin-top:12px;text-align:center}
+.splash{flex-direction:column}
